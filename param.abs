@@ -1,0 +1,13 @@
+module Param;
+
+export *;
+
+def Rat sec_to_time_unit() = 50;
+def Rat sec_monitoring_inverval() = 10;
+def Rat sec_req_inverval() = 3;
+def Rat byte_header_size() = 3500;
+def Rat byte_edge_bandwidth() = 10;
+def Rat byte_cloud_bandwidth() = 1;
+def Rat compute_byte_to_send(Rat curr_size) = pow(curr_size,2) * byte_header_size() / pow(10,6);
+def Rat lat_threshold() = 5 * sec_to_time_unit();
+def List<Rat> sizes() = list[20,40,60,80,100,120,140];

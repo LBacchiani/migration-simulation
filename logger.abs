@@ -1,0 +1,18 @@
+module Logger;
+
+export *;
+import * from Param;
+
+
+
+interface ILogger{
+    Unit log(Time time, Rat avg_latency, Rat avg_size, String zone);
+}
+
+class Logger() implements ILogger{
+    String log = "";
+
+    Unit log(Time time, Rat avg_latency, Rat avg_size, String zone) {
+        println("[" + toString(timeValue(time) / sec_to_time_unit()) + " sec] avg latency: " + toString(float(1000 * avg_latency / sec_to_time_unit())) + " ms, avg size: " + toString(float(avg_size)) + " Mb, zone: " + zone);
+    }
+}

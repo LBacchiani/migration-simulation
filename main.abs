@@ -1,0 +1,24 @@
+module Main;
+
+export *;
+import * from ABS.DC;
+import * from Param;
+import * from Orchestrator;
+import * from Data_Processor;
+import * from Data_Collector;
+import * from Logger;
+import * from DB;
+
+
+{
+
+ CloudProvider provider = new CloudProvider("Amazon");
+provider.setInstanceDescriptions(map[Pair("EDGE", map[Pair(Bandwidth,byte_edge_bandwidth())]),Pair("CLOUD", map[Pair(Bandwidth,byte_cloud_bandwidth())])]);
+ DC edge = provider.launchInstanceNamed("EDGE");
+ DC cloud = provider.launchInstanceNamed("CLOUD");
+ IDB db = new DB();
+ [HTTPName: "collector"] IData_Collector d_coll = new Data_Collector();
+ [DC: cloud] IData_Processor d_proc = new Data_Processor(d_coll, db);
+ ILogger logger = new Logger();
+ IOrchestrator orch = new Orchestrator(edge, cloud, d_coll, d_proc, db, logger, "cloud");
+}

@@ -1,0 +1,48 @@
+module Orchestrator;
+
+export *;
+
+import * from ABS.DC;
+import * from Data_Processor;
+import * from Data_Collector;
+import * from Param;
+import * from Logger;
+import * from DB;
+
+
+interface IOrchestrator {}
+
+class Orchestrator(DC edge, DC cloud, IData_Collector d_coll, IData_Processor dp, IDB db, ILogger logger, String z) implements IOrchestrator {
+
+    String zone = z;
+    Int times = 0;
+    Bool continue = True;
+
+    Unit run() {
+        while(continue) {
+            await duration(sec_monitoring_inverval() * sec_to_time_unit(), sec_monitoring_inverval() * sec_to_time_unit());
+            Rat avg_latency = db.getLatency();
+            Rat avg_size = db.getSize();
+            db.reset();
+            if(avg_latency > lat_threshold() && zone == "cloud") this!migrate();
+            times = times + 1;
+            if(times == 6) {
+                times = 0;
+                continue = d_coll.inc_index();
+            }
+            logger.log(now(), avg_latency, avg_size, zone);
+        }
+        dp.kill();
+    }
+
+    Unit migrate() {
+        dp.kill();
+        if(zone == "cloud") {
+            [DC: edge] dp = new Data_Processor(d_coll, db);
+            zone = "edge";
+        } else {
+            [DC: cloud] dp = new Data_Processor(d_coll, db);
+            zone = "cloud";  
+        }
+    }
+}

@@ -1,0 +1,41 @@
+module DB;
+
+export *;
+
+
+interface IDB {
+    Unit add(Rat lat, Rat size);
+    Rat getSize();
+    Rat getLatency();
+    Unit reset();
+}
+
+class DB implements IDB {
+
+    Rat size = 0;
+    Rat latency = 0;
+    Int n_reqs = 0;
+
+    Unit add(Rat l, Rat s) {
+        latency = latency + l;
+        size = size + s;
+        n_reqs = n_reqs + 1;
+    }
+    Rat getSize() {
+        Rat val = -1;
+        if(n_reqs != 0) val = size / n_reqs;
+        return val;
+    }
+
+    Rat getLatency() {
+        Rat val = -1;
+        if(n_reqs != 0) val = latency / n_reqs;
+        return val;
+    }
+
+    Unit reset() {
+        size = 0;
+        latency = 0;
+        n_reqs = 0;
+    }
+}

@@ -1,0 +1,36 @@
+module Data_Processor;
+
+export *;
+import * from Data_Collector;
+import * from Param;
+import * from ABS.DC;
+import * from DB;
+
+interface IData_Processor{
+    Unit kill();
+}
+
+class Data_Processor(IData_Collector dc, IDB db) implements IData_Processor {
+
+    Bool kill = False;
+
+    Unit run() {
+        while(!kill) await this!request();
+    }
+
+    Unit kill() {kill = True;}
+
+    Unit request() {
+        Time t1 = now();
+        Rat size = this.getData();
+        Time t2 = now();
+        Rat latency = timeDifference(t1,t2);
+        db.add(latency,size);
+    }
+    
+
+    Rat getData() {
+        Rat size = dc.getData();
+        [DataSize: size * sec_to_time_unit()] return size;
+    }
+}

@@ -1,0 +1,32 @@
+module Data_Collector;
+
+export *;
+import * from Param;
+import * from ABS.DC;
+
+
+
+interface IData_Collector {
+    Rat getData();
+    [HTTPCallable] Unit setData(Int val);
+    Bool inc_index();
+}
+
+class Data_Collector implements IData_Collector{
+    Rat byte_size = 0;
+    Int curr = 0;
+    Int times = 0;
+    
+    Rat getData() {
+        if(curr < length(sizes())) byte_size = nth(sizes(),curr);
+        Rat to_send = compute_byte_to_send(byte_size);
+        return to_send;
+    }
+
+    Bool inc_index() {
+        curr = curr + 1;
+        return !(curr == length(sizes()));
+    }
+
+    Unit setData(Int val) {byte_size = val;}
+}
