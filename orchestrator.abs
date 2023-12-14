@@ -4,45 +4,68 @@ export *;
 
 import * from ABS.DC;
 import * from Data_Processor;
-import * from Data_Collector;
 import * from Param;
-import * from Logger;
-import * from DB;
-
+import * from Storage;
+import * from Data_Collector;
+import * from Data_Alert;
 
 interface IOrchestrator {}
 
-class Orchestrator(DC edge, DC cloud, IData_Collector d_coll, IData_Processor dp, IDB db, ILogger logger, String z) implements IOrchestrator {
+class Orchestrator(DC edge, DC cloud, String z, IData_Processor data_processor, IStorage storage) implements IOrchestrator {
 
     String zone = z;
     Int times = 0;
-    Bool continue = True;
+    Int lat_time_series_curr_index = 0;
+    Int size_time_series_curr_index = 0;
 
     Unit run() {
-        while(continue) {
-            await duration(sec_monitoring_inverval() * sec_to_time_unit(), sec_monitoring_inverval() * sec_to_time_unit());
-            Rat avg_latency = db.getLatency();
-            Rat avg_size = db.getSize();
-            db.reset();
-            if(avg_latency > lat_threshold() && zone == "cloud") this!migrate();
-            times = times + 1;
-            if(times == 6) {
-                times = 0;
-                continue = d_coll.inc_index();
-            }
-            logger.log(now(), avg_latency, avg_size, zone);
+        while(True) {
+            await duration(monitoring_inverval(), monitoring_inverval());
+            List<Rat> latencies = storage.get_latency_timeserie();
+            List<Rat> sizes = storage.get_size_timeserie();
+            Rat avg_lat = this.compute_average(latencies, lat_time_series_curr_index);
+            Rat avg_size = this.compute_average(sizes, size_time_series_curr_index);
+            lat_time_series_curr_index = length(latencies);
+            size_time_series_curr_index = length(sizes);
+            if((avg_lat > max_lat_threshold() || avg_lat < 0) && zone == "cloud") this!migrate();
+            else if(avg_lat < min_lat_threshold() && avg_lat > 0 && zone == "edge") this!migrate();
+            this.log(now(), avg_lat, avg_size, zone);
         }
-        dp.kill();
     }
 
     Unit migrate() {
-        dp.kill();
-        if(zone == "cloud") {
-            [DC: edge] dp = new Data_Processor(d_coll, db);
+        IData_Collector data_collector = storage.get_data_collector_ref();
+       if(zone == "cloud") {
             zone = "edge";
+            [DC: edge] data_processor = new Data_Processor(data_collector, storage);
         } else {
-            [DC: cloud] dp = new Data_Processor(d_coll, db);
             zone = "cloud";  
+            [DC: cloud] data_processor = new Data_Processor(data_collector, storage);
         }
+        IData_Alert data_alert = storage.get_data_alert_ref();
+        data_alert.connect_data_processor(data_processor);
+    }
+
+    Rat compute_average(List<Rat> values, Int curr_index) {
+        Rat tmp = 0;
+        Int i = curr_index;
+        while(i < length(values)) {
+            tmp = tmp + nth(values, i);
+            i = i + 1;
+        }
+        if(curr_index == i) tmp = -1;
+        else tmp = tmp / (length(values) - curr_index);
+        return tmp;
+    }
+
+    Unit log(Time time, Rat avg_latency, Rat avg_size, String zone) {//, Rat avg_size, String zone) {
+        Float sec_elapsed = float(timeValue(time) / sec_to_time_unit());
+        Float avg_size_mb = float(avg_size / pow(10,6));
+        Float avg_lat_ms = float(1000 * avg_latency / sec_to_time_unit());
+        String toPrint = "[" + toString(sec_elapsed) + " sec]";
+        if(avg_latency >= 0) toPrint = toPrint + " [avg lat: "  + toString(avg_lat_ms) + " ms]";
+        else toPrint = toPrint + " [avg lat: -1 ms]";
+        toPrint = toPrint + " [avg size: " + toString(avg_size_mb) + " Mb] [zone: " + zone + "]";
+        println(toPrint);
     }
 }

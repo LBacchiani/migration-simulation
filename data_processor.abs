@@ -1,36 +1,35 @@
 module Data_Processor;
 
 export *;
+import * from Data_Alert;
 import * from Data_Collector;
 import * from Param;
 import * from ABS.DC;
-import * from DB;
+import * from Storage;
 
 interface IData_Processor{
-    Unit kill();
+    Unit request();
 }
 
-class Data_Processor(IData_Collector dc, IDB db) implements IData_Processor {
-
-    Bool kill = False;
-
-    Unit run() {
-        while(!kill) await this!request();
-    }
-
-    Unit kill() {kill = True;}
-
+class Data_Processor(IData_Collector data_collector, IStorage storage) implements IData_Processor {
     Unit request() {
-        Time t1 = now();
-        Rat size = this.getData();
-        Time t2 = now();
-        Rat latency = timeDifference(t1,t2);
-        db.add(latency,size);
+        DC dc = thisDC();
+        Time start = now();
+        Rat bandwidth = this.getBandwidth(dc);
+        Rat data_size = data_collector.fetch_data_size();
+        [DataSize: data_size] data_collector!fetch_data();
+        Rat time_elapsed = timeDifference(start,now());
+        storage!store_values(time_elapsed, data_size);
     }
-    
 
-    Rat getData() {
-        Rat size = dc.getData();
-        [DataSize: size * sec_to_time_unit()] return size;
+    Rat getBandwidth(DC dc) {
+        InfRat tmp = dc.total(Bandwidth);
+        Rat bandwidth = 0;
+        switch(tmp) {
+            Fin(value) => bandwidth = value;
+            _ => bandwidth = 0;
+        }
+        return bandwidth;
     }
 }
+

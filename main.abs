@@ -3,22 +3,23 @@ module Main;
 export *;
 import * from ABS.DC;
 import * from Param;
-import * from Orchestrator;
 import * from Data_Processor;
+import * from Data_Alert;
 import * from Data_Collector;
-import * from Logger;
-import * from DB;
+import * from Orchestrator;
+import * from Storage;
 
 
-{
-
+{ 
  CloudProvider provider = new CloudProvider("Amazon");
-provider.setInstanceDescriptions(map[Pair("EDGE", map[Pair(Bandwidth,byte_edge_bandwidth())]),Pair("CLOUD", map[Pair(Bandwidth,byte_cloud_bandwidth())])]);
+ provider.setInstanceDescriptions(map[Pair("EDGE", map[Pair(Bandwidth,edge_bandwidth())]),Pair("CLOUD", map[Pair(Bandwidth,cloud_bandwidth())])]);
  DC edge = provider.launchInstanceNamed("EDGE");
  DC cloud = provider.launchInstanceNamed("CLOUD");
- IDB db = new DB();
- [HTTPName: "collector"] IData_Collector d_coll = new Data_Collector();
- [DC: cloud] IData_Processor d_proc = new Data_Processor(d_coll, db);
- ILogger logger = new Logger();
- IOrchestrator orch = new Orchestrator(edge, cloud, d_coll, d_proc, db, logger, "cloud");
+ IStorage storage = new Storage();
+ IData_Collector data_collector = new Data_Collector();
+ storage.set_data_collector_ref(data_collector);
+ [DC: cloud] IData_Processor data_processor = new Data_Processor(data_collector, storage);
+ IData_Alert data_alert = new Data_Alert(data_processor);
+ storage.set_data_alert_ref(data_alert);
+ IOrchestrator orchestrator = new Orchestrator(edge, cloud, "cloud", data_processor, storage);
 }
