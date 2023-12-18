@@ -27,8 +27,8 @@ class Orchestrator(DC edge, DC cloud, String z, IData_Processor data_processor, 
             Rat avg_size = this.compute_average(sizes, size_time_series_curr_index);
             lat_time_series_curr_index = length(latencies);
             size_time_series_curr_index = length(sizes);
-            if((avg_lat > max_lat_threshold() || avg_lat < 0) && zone == "cloud") this!migrate();
-            else if(avg_lat < min_lat_threshold() && avg_lat > 0 && zone == "edge") this!migrate();
+            //if((avg_lat > max_lat_threshold() || avg_lat < 0) && zone == "cloud") this!migrate();
+            //else if(avg_lat < min_lat_threshold() && avg_lat > 0 && zone == "edge") this!migrate();
             this.log(now(), avg_lat, avg_size, zone);
         }
     }

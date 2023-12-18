@@ -13,23 +13,21 @@ interface IData_Processor{
 
 class Data_Processor(IData_Collector data_collector, IStorage storage) implements IData_Processor {
     Unit request() {
-        DC dc = thisDC();
         Time start = now();
-        Rat bandwidth = this.getBandwidth(dc);
         Rat data_size = data_collector.fetch_data_size();
-        [DataSize: data_size] data_collector!fetch_data();
+        [DataSize: data_size + ((cloud_bandwidth() * cloudDistance())/propagationSpeed())] data_collector!fetch_data(); //we need to take into account the distance between sender and receiver
         Rat time_elapsed = timeDifference(start,now());
         storage!store_values(time_elapsed, data_size);
     }
 
-    Rat getBandwidth(DC dc) {
-        InfRat tmp = dc.total(Bandwidth);
-        Rat bandwidth = 0;
-        switch(tmp) {
-            Fin(value) => bandwidth = value;
-            _ => bandwidth = 0;
-        }
-        return bandwidth;
-    }
+    //explanation of how DataSize is computed
+    //latency_tot = transmission time + propagation time
+    //transmission time = data size / bandwith 
+    //propagation time = distance / propagation speed
+    //for technical reason we need to model the above into DataSize
+    //given that bandwith is fixed, we can only modify data_size to 
+    //model the above. Being x the new data size to find, 
+    //latency_tot = x/bandwith = data_size/bandwith + distance/propagation_speed
+    //=> x = data_size + (distance * bandwith) / propagation_time
 }
 
