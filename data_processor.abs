@@ -21,7 +21,7 @@ class Data_Processor(IData_Collector data_collector, IStorage storage) implement
     }
 
     //explanation of how DataSize is computed
-    //latency_tot = transmission time + propagation time
+    //latency_tot = transmission time + propagation time + some other neglectable suff (queuing time...)
     //transmission time = data size / bandwith 
     //propagation time = distance / propagation speed
     //for technical reason we need to model the above into DataSize
