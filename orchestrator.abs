@@ -3,15 +3,14 @@ module Orchestrator;
 export *;
 
 import * from ABS.DC;
-import * from Data_Processor;
+import * from Architecture;
 import * from Param;
-import * from Storage;
-import * from Data_Collector;
-import * from Data_Alert;
+import * from Migration;
+
 
 interface IOrchestrator {}
 
-class Orchestrator(DC edge, DC cloud, String z, IData_Processor data_processor, IStorage storage) implements IOrchestrator {
+class Orchestrator(Migration edge, Migration cloud, String z, IStorage storage) implements IOrchestrator {
 
     String zone = z;
     Int times = 0;
@@ -27,23 +26,20 @@ class Orchestrator(DC edge, DC cloud, String z, IData_Processor data_processor, 
             Rat avg_size = this.compute_average(sizes, size_time_series_curr_index);
             lat_time_series_curr_index = length(latencies);
             size_time_series_curr_index = length(sizes);
-            //if((avg_lat > max_lat_threshold() || avg_lat < 0) && zone == "cloud") this!migrate();
-            //else if(avg_lat < min_lat_threshold() && avg_lat > 0 && zone == "edge") this!migrate();
+            if((avg_lat > max_lat_threshold() || avg_lat < 0) && zone == "cloud") this!migrate();
+            else if(avg_lat < min_lat_threshold() && avg_lat > 0 && zone == "edge") this!migrate();
             this.log(now(), avg_lat, avg_size, zone);
         }
     }
 
     Unit migrate() {
-        IData_Collector data_collector = storage.get_data_collector_ref();
        if(zone == "cloud") {
             zone = "edge";
-            [DC: edge] data_processor = new Data_Processor(data_collector, storage);
+            edge!deploy();
         } else {
             zone = "cloud";  
-            [DC: cloud] data_processor = new Data_Processor(data_collector, storage);
+            cloud!deploy();
         }
-        IData_Alert data_alert = storage.get_data_alert_ref();
-        data_alert.connect_data_processor(data_processor);
     }
 
     Rat compute_average(List<Rat> values, Int curr_index) {

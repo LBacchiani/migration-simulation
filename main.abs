@@ -3,11 +3,9 @@ module Main;
 export *;
 import * from ABS.DC;
 import * from Param;
-import * from Data_Processor;
-import * from Data_Alert;
-import * from Data_Collector;
 import * from Orchestrator;
-import * from Storage;
+import * from Architecture;
+import * from Migration;
 
 
 { 
@@ -15,11 +13,13 @@ import * from Storage;
  provider.setInstanceDescriptions(map[Pair("EDGE", map[Pair(Bandwidth,edge_bandwidth())]),Pair("CLOUD", map[Pair(Bandwidth,cloud_bandwidth())])]);
  DC edge = provider.launchInstanceNamed("EDGE");
  DC cloud = provider.launchInstanceNamed("CLOUD");
+ String zone = "cloud";
  IStorage storage = new Storage();
  IData_Collector data_collector = new Data_Collector();
- storage.set_data_collector_ref(data_collector);
- [DC: cloud] IData_Processor data_processor = new Data_Processor(data_collector, storage);
- IData_Alert data_alert = new Data_Alert(data_processor);
- storage.set_data_alert_ref(data_alert);
- IOrchestrator orchestrator = new Orchestrator(edge, cloud, "cloud", data_processor, storage);
+ IData_Alert data_alert = new Data_Alert();
+ Migration cloud_migration = new Migration(provider, cloud, data_collector, data_alert, storage);
+ Migration edge_migration = new Migration(provider, edge, data_collector, data_alert, storage);
+ if(zone == "cloud") cloud_migration!deploy();
+ else edge_migration!deploy();
+ IOrchestrator orchestrator = new Orchestrator(edge_migration, cloud_migration, zone, storage);
 }
