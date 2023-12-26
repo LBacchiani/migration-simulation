@@ -3,7 +3,7 @@ module Main;
 export *;
 import * from ABS.DC;
 import * from Param;
-import * from Orchestrator;
+import * from Monitor;
 import * from Architecture;
 import * from Migration;
 
@@ -17,9 +17,9 @@ import * from Migration;
  IStorage storage = new Storage();
  IData_Collector data_collector = new Data_Collector();
  IData_Alert data_alert = new Data_Alert();
- Migration cloud_migration = new Migration(provider, cloud, data_collector, data_alert, storage);
- Migration edge_migration = new Migration(provider, edge, data_collector, data_alert, storage);
+ Migration cloud_migration = new Migration(cloud, data_collector, data_alert, storage);
+ Migration edge_migration = new Migration(edge, data_collector, data_alert, storage);
  if(zone == "cloud") cloud_migration!deploy();
  else edge_migration!deploy();
- IOrchestrator orchestrator = new Orchestrator(edge_migration, cloud_migration, zone, storage);
+ IMonitor monitor = new Monitor(edge_migration, cloud_migration, zone, storage);
 }

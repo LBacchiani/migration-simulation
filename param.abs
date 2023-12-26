@@ -3,15 +3,15 @@ module Param;
 export *;
 
 def Rat sec_to_time_unit() = 30; //be this value v => v time unit = 1 sec
-def Rat monitoring_inverval() = 10 * sec_to_time_unit(); //monitoring window in sec
-def Rat req_inverval() = 3 * sec_to_time_unit(); //data alert request interval in sec
+def Rat monitoring_inverval() = 10 * sec_to_time_unit(); //monitoring window in TU
+def Rat req_inverval() = 3 * sec_to_time_unit(); //data alert request interval in TU
 def Rat byte_header_size() = 3500; //byte
 def Rat edge_bandwidth() = 40 * pow(10,6) / sec_to_time_unit(); //MB per TU
 def Rat cloud_bandwidth() = 2 * pow(10,6) / sec_to_time_unit(); // MB per TU
 def Rat compute_data_size_to_send(Rat curr_size) = pow(curr_size,2) * byte_header_size(); //byte
-def Rat max_lat_threshold() = 2 * sec_to_time_unit(); //threshold in sec
-def Rat min_lat_threshold() = 1/2 * sec_to_time_unit(); //threshold in sec
-def List<Rat> sizes() = list[20,40,60,80,100,120,140]; //byte
+def Rat max_lat_threshold() = 2 * sec_to_time_unit(); //threshold in TU
+def Rat min_lat_threshold() = 1/2 * sec_to_time_unit(); //threshold in TU
+def List<Rat> sizes() = list[20];//,40,60,80,100,120,140]; //byte
 def Int size_repetition() = 10; //number of repetition of for each single element in sizes() 
 def Rat propagationSpeed() = 2 * pow(10,8) / sec_to_time_unit(); //propagation speed of fiber optic cables in meters/TU
 def Rat edgeDistance() = 10; //distance in meters
