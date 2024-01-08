@@ -6,23 +6,28 @@ import * from Param;
 import * from ABS.DC;
 import * from ABS.SmartDeploy;
 
-//[SmartDeployCloudProvider: "{\"edge\" : {\"cost\" : 100, \"payment_interval\" : 1, \"resources\" : { \"Cores\" : 2, \"Memory\" : 375, \"Bandwidth\" : 500, \"Speed\" : 10, \"Startupduration\" : 100}} , \"cloud\" : { \"cost\" : 199, \"payment_interval\" : 1, \"resources\" : { \"Cores\" : 4, \"Memory\" : 750, \"Bandwidth\" : 500, \"Speed\" : 20, \"Startupduration\" : 100}}}"]
+[SmartDeployCloudProvider: "{\"cloud\" : { \"cost\" : 199, \"payment_interval\" : 1, \"resources\" : { \"Cores\" : 10, \"Memory\" : 800, \"Bandwidth\" : 500, \"Speed\" : 20, \"Startupduration\" : 100}}}"]
 
-[SmartDeploy : "{\"id\":\"Migration\",\"specification\":\"Data_Processor = 1\", \"DC\":[{\"name\":\"vm\", \"Cores\" : 4, \"Memory\" : 750, \"Speed\" : 20}], \"obj\":[{\"name\":\"data_collector\",\"interface\":\"IData_Collector\",\"provides\":[{\"ports\":[\"IData_Collector\"],\"num\":-1}],\"methods\" : []}, {\"name\":\"data_alert\",\"interface\":\"IData_Alert\",\"provides\":[{\"ports\":[\"IData_Alert\"],\"num\":-1}],\"methods\" : [{\"add\" : {\"name\" : \"connect_data_processor\",\"param_type\" : \"IData_Processor\"},  \"remove\" : {\"name\" : \"diconnect_data_processor\",\"return_type\" : \"IData_Processor\"}}]}, {\"name\":\"storage\",\"interface\":\"IStorage\",\"provides\":[{\"ports\":[\"IStorage\"],\"num\":-1}],\"methods\" : []}], \"cloud_provider_DC_availability\":{},\"bind preferences\":[\"((forall ?x of type Data_Processor in '.*' :  forall ?y of type data_alert in '.*' : ?x used by ?y))\"]}"]
+[SmartDeploy : "{\"id\":\"Setup\",\"specification\":\"Data_Alert = 1 and Data_Collector = 1 and Data_Processor = 1 and Storage = 1 and forall ?x in DC: (?x.Data_Processor > 0 impl ?x.Data_Collector = 0)\", \"DC\":[{\"name\":\"vm\", \"Cores\" : 10, \"Memory\" : 800, \"Speed\" : 20}], \"obj\":[], \"cloud_provider_DC_availability\":{\"cloud\" : 1},\"bind preferences\":[\"((forall ?x of type Data_Processor in '.*' :  forall ?y of type Data_Alert in '.*' : ?x used by ?y))\"]}"]
 
-//[SmartDeployCost : "{\"class\" : \"Data_Alert\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 50}, \"sig\":[], \"methods\" : [{\"add\" : {\"name\" : \"connect_data_processor\",\"param_type\" : \"IData_Processor\"}, \"remove\" : {}}]}]}"]
+//[SmartDeploy : "{\"id\":\"Migration\",\"specification\":\"Data_Processor = 1\", \"DC\":[{\"name\":\"vm\", \"Cores\" : 10, \"Memory\" : 800, \"Speed\" : 20}], \"obj\":[{\"name\":\"data_collector\",\"interface\":\"IData_Collector\",\"provides\":[{\"ports\":[\"IData_Collector\"],\"num\":-1}],\"methods\" : []}, {\"name\":\"data_alert\",\"interface\":\"IData_Alert\",\"provides\":[{\"ports\":[\"IData_Alert\"],\"num\":-1}],\"methods\" : [{\"add\" : {\"name\" : \"connect_data_processor\",\"param_type\" : \"IData_Processor\"},  \"remove\" : {\"name\" : \"diconnect_data_processor\",\"return_type\" : \"IData_Processor\"}}]}, {\"name\":\"storage\",\"interface\":\"IStorage\",\"provides\":[{\"ports\":[\"IStorage\"],\"num\":-1}],\"methods\" : []}], \"cloud_provider_DC_availability\":{},\"bind preferences\":[\"((forall ?x of type Data_Processor in '.*' :  forall ?y of type data_alert in '.*' : ?x used by ?y))\"]}"]
+
+[SmartDeployCost : "{\"class\" : \"Data_Alert\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 50}, \"sig\":[{\"kind\" : \"require\",\"type\" : \"IStorage\"}], \"methods\" : [{\"add\" : {\"name\" : \"connect_data_processor\",\"param_type\" : \"IData_Processor\"}, \"remove\" : {\"name\" : \"diconnect_data_processor\", \"return_type\" : \"IData_Processor\"}}]}]}"]
 interface IData_Alert {
     Unit connect_data_processor(IData_Processor processor);
     IData_Processor diconnect_data_processor();
 }
 
-class Data_Alert() implements IData_Alert {
+class Data_Alert(IStorage storage) implements IData_Alert {
     IData_Processor data_processor;
     Unit run() {
         while(True) {
             await duration(req_inverval(), req_inverval());
-            if(data_processor != null )data_processor!request();
-            else println("Data Processor not connected");
+            if(data_processor != null) {
+                data_processor!request();
+                storage!setNewRequestsAvailability(True);
+            }
+            else storage!setNewRequestsAvailability(False);
         }
     }
 
@@ -35,7 +40,7 @@ class Data_Alert() implements IData_Alert {
     }
 }
 
-//[SmartDeployCost : "{\"class\" : \"Data_Collector\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 50}, \"sig\":[], \"methods\" : []}]}"]
+[SmartDeployCost : "{\"class\" : \"Data_Collector\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 100}, \"sig\":[], \"methods\" : []}]}"]
 interface IData_Collector {
     String fetch_data();
     Rat fetch_data_size();
@@ -58,8 +63,9 @@ interface IData_Processor{
     Unit request();
 }
 
-[SmartDeployCost : "{\"class\" : \"Data_Processor\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 2,\"Memory\" : 200},\"sig\" : [{\"kind\" : \"require\",\"type\" : \"IData_Collector\"}, {\"kind\" : \"require\",\"type\" : \"IStorage\"}], \"methods\" : []}]}"]
+[SmartDeployCost : "{\"class\" : \"Data_Processor\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 100},\"sig\" : [{\"kind\" : \"require\",\"type\" : \"IData_Collector\"}, {\"kind\" : \"require\",\"type\" : \"IStorage\"}], \"methods\" : []}]}"]
 class Data_Processor(IData_Collector data_collector, IStorage storage) implements IData_Processor {
+
     Unit request() {
         Time start = now();
         DC dc = thisDC();
@@ -70,6 +76,7 @@ class Data_Processor(IData_Collector data_collector, IStorage storage) implement
         storage!store_values(time_elapsed, data_size);
     }
 
+    //private methods
     Rat from_transmission_time_to_additional_data_size(DC dc) {
         Rat bandwith = this.getBandwidth(dc);
         Rat increment = 0;
@@ -100,22 +107,28 @@ class Data_Processor(IData_Collector data_collector, IStorage storage) implement
 }
 
 //////////STORAGE////////
-
+[SmartDeployCost : "{\"class\" : \"Storage\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 100},\"sig\" : [], \"methods\" : []}]}"]
 interface IStorage {
     Unit store_values(Rat latency, Rat size);
     List<Rat> get_latency_timeserie();
     List<Rat> get_size_timeserie();
+    Unit setNewRequestsAvailability(Bool state);
+    Bool areNewRequestsAvailabible();
 }
 
 class Storage() implements IStorage {
     List<Rat> latency_timeserie = list[];
     List<Rat> size_timeserie = list[];
-
+    Bool areRequestsAvailable = False;
     
     Unit store_values(Rat latency, Rat size) {
         this.add_latency_value(latency);
         this.add_size_value(size);
     }
+
+    Unit setNewRequestsAvailability(Bool state) {areRequestsAvailable = state;}
+
+    Bool areNewRequestsAvailabible() {return areRequestsAvailable;}
 
     List<Rat> get_latency_timeserie() {return latency_timeserie;}
 

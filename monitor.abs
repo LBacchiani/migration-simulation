@@ -27,9 +27,12 @@ class Monitor(Migration edge, Migration cloud, String z, IStorage storage) imple
             Rat avg_size = this.compute_average(sizes, size_time_series_curr_index);
             lat_time_series_curr_index = length(latencies);
             size_time_series_curr_index = length(sizes);
-            if((avg_lat > max_lat_threshold() || avg_lat < 0) && zone == "cloud") this!migrate();
-            else if(avg_lat < min_lat_threshold() && avg_lat > 0 && zone == "edge") this!migrate();
-            this.log(now(), avg_lat, avg_size, zone);
+            Bool areNewRequestsAvailable = storage.areNewRequestsAvailabible();
+            if(areNewRequestsAvailable) {
+                if((avg_lat > max_lat_threshold() || avg_lat < 0) && zone == "cloud") this!migrate();
+                else if(avg_lat < min_lat_threshold() && avg_lat > 0 && zone == "edge") this!migrate();
+            }
+            this.log(now(), avg_lat, avg_size, zone, areNewRequestsAvailable);
             i = i + 1;
         }
     }
@@ -37,9 +40,11 @@ class Monitor(Migration edge, Migration cloud, String z, IStorage storage) imple
     Unit migrate() {
        if(zone == "cloud") {
             zone = "edge";
+            cloud!undeploy();
             edge!deploy();
         } else {
             zone = "cloud";  
+            edge!undeploy();
             cloud!deploy();
         }
     }
@@ -56,14 +61,18 @@ class Monitor(Migration edge, Migration cloud, String z, IStorage storage) imple
         return tmp;
     }
 
-    Unit log(Time time, Rat avg_latency, Rat avg_size, String zone) {//, Rat avg_size, String zone) {
+    Unit log(Time time, Rat avg_latency, Rat avg_size, String zone, Bool areNewRequestsAvailable) {
         Float sec_elapsed = float(timeValue(time) / sec_to_time_unit());
         Float avg_size_mb = float(avg_size / pow(10,6));
         Float avg_lat_ms = float(1000 * avg_latency / sec_to_time_unit());
         String toPrint = "[" + toString(sec_elapsed) + " sec]";
-        if(avg_latency >= 0) toPrint = toPrint + " [avg lat: "  + toString(avg_lat_ms) + " ms]";
-        else toPrint = toPrint + " [avg lat: -1 ms]";
-        toPrint = toPrint + " [avg size: " + toString(avg_size_mb) + " Mb] [zone: " + zone + "]";
+        if(areNewRequestsAvailable) {
+            if(avg_latency >= 0) toPrint = toPrint + " [avg lat: "  + toString(avg_lat_ms) + " ms]";
+            else toPrint = toPrint + " [avg lat: -1 ms]";
+            if(avg_size >= 0) toPrint = toPrint + " [avg size: " + toString(avg_size_mb) + " Mb]";
+            else toPrint = toPrint + " [avg size: -1 Mb]";
+        } else toPrint = toPrint + " [No Requests Found]";
+        toPrint = toPrint + " [zone: " + zone + "]";
         println(toPrint);
     }
 }
