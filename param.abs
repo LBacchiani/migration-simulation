@@ -7,7 +7,7 @@ def Rat sec_to_time_unit() = 30; //be this value v => v time unit = 1 sec
 def Rat monitoring_inverval() = 10 * sec_to_time_unit(); //monitoring window in TU
 def Rat req_inverval() = 3 * sec_to_time_unit(); //data alert request interval in TU
 def Rat byte_header_size() = 3500; //byte
-def Rat edge_bandwidth() = 50 * pow(10,6) / sec_to_time_unit(); //MB per TU
+def Rat edge_bandwidth() = 40 * pow(10,6) / sec_to_time_unit(); //MB per TU
 def Rat cloud_bandwidth() = 10 * pow(10,6) / sec_to_time_unit(); // MB per TU
 def Rat compute_data_size_to_send(Rat curr_size) = pow(curr_size,2) * byte_header_size(); //byte
 
