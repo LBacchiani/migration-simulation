@@ -1,0 +1,117 @@
+module ToEdgeMigration;
+export *;
+import * from ABS.DC;
+import * from Architecture;
+import * from Param;
+
+interface ToEdgeMigration{
+	List<IData_Alert> getIData_Alert();
+	List<IData_Processor> getIData_Processor();
+	List<IStorage> getIStorage();
+	List<IData_Collector> getIData_Collector();
+	List<DeploymentComponent> getDeploymentComponent();
+	Unit deploy();
+	Unit undeploy();
+}
+
+class ToEdgeMigration(CloudProvider cloudProvider, IData_Collector data_collector, IData_Alert data_alert, IStorage storage) implements ToEdgeMigration{
+
+	List<List<IData_Alert>> ls_ls_IData_Alert = Nil;
+	List<IData_Alert> ls_IData_Alert = Nil;
+	List<List<IData_Processor>> ls_ls_IData_Processor = Nil;
+	List<IData_Processor> ls_IData_Processor = Nil;
+	List<List<IStorage>> ls_ls_IStorage = Nil;
+	List<IStorage> ls_IStorage = Nil;
+	List<List<IData_Collector>> ls_ls_IData_Collector = Nil;
+	List<IData_Collector> ls_IData_Collector = Nil;
+	List<List<DeploymentComponent>> ls_ls_DeploymentComponent = Nil;
+	List<DeploymentComponent> ls_DeploymentComponent = Nil;
+	Rat waiting_time = 100;
+	{
+		cloudProvider.addInstanceDescription(Pair("EDGE",
+			map[Pair(CostPerInterval,100)
+			,Pair(PaymentInterval,1)
+			,Pair(Cores,2)
+			,Pair(Memory,375)
+			,Pair(Bandwidth,edge_bandwidth())
+			,Pair(Speed,10)
+			]));
+	}
+
+	List<IData_Alert> getIData_Alert() { return ls_IData_Alert; }
+	List<IData_Processor> getIData_Processor() { return ls_IData_Processor; }
+	List<IStorage> getIStorage() { return ls_IStorage; }
+	List<IData_Collector> getIData_Collector() { return ls_IData_Collector; }
+	List<DeploymentComponent> getDeploymentComponent() { return ls_DeploymentComponent; }
+
+	Unit deploy() {
+		ls_ls_IData_Alert = Cons(ls_IData_Alert,ls_ls_IData_Alert);
+		ls_IData_Alert = Nil;
+		ls_ls_IData_Processor = Cons(ls_IData_Processor,ls_ls_IData_Processor);
+		ls_IData_Processor = Nil;
+		ls_ls_IStorage = Cons(ls_IStorage,ls_ls_IStorage);
+		ls_IStorage = Nil;
+		ls_ls_IData_Collector = Cons(ls_IData_Collector,ls_ls_IData_Collector);
+		ls_IData_Collector = Nil;
+		ls_ls_DeploymentComponent = Cons(ls_DeploymentComponent,ls_ls_DeploymentComponent);
+		ls_DeploymentComponent = Nil;
+		this.deploy_aux();
+	}
+
+	Unit undeploy() {
+		if (ls_ls_DeploymentComponent != Nil) {
+			this.undeploy_aux();
+			ls_DeploymentComponent = head(ls_ls_DeploymentComponent);
+			ls_ls_DeploymentComponent = tail(ls_ls_DeploymentComponent);
+				ls_IData_Alert = head(ls_ls_IData_Alert);
+				ls_IData_Processor = head(ls_ls_IData_Processor);
+				ls_IStorage = head(ls_ls_IStorage);
+				ls_IData_Collector = head(ls_ls_IData_Collector);
+			ls_ls_IData_Alert = tail(ls_ls_IData_Alert);
+			ls_ls_IData_Processor = tail(ls_ls_IData_Processor);
+			ls_ls_IStorage = tail(ls_ls_IStorage);
+			ls_ls_IData_Collector = tail(ls_ls_IData_Collector);
+		}
+	}
+
+
+	Unit deploy_aux() {
+		Map<DeploymentComponent,Rat> speedPatchMap = map[];
+		DeploymentComponent vm_0 = cloudProvider.launchInstanceNamed("EDGE");
+		ls_DeploymentComponent = Cons(vm_0,ls_DeploymentComponent);
+		speedPatchMap = put(speedPatchMap,vm_0,0);
+		await duration(waiting_time,waiting_time);
+		[DC: vm_0] IData_Processor odefault___Data_Processor_0_vm_0 = new Data_Processor(data_collector, storage);
+		Rat coreRequired_odefault___Data_Processor_0_vm_0 = 1;
+		speedPatchMap = put(speedPatchMap, vm_0, fromJust(lookup(speedPatchMap,vm_0)) + coreRequired_odefault___Data_Processor_0_vm_0);
+		ls_IData_Processor = Cons(odefault___Data_Processor_0_vm_0, ls_IData_Processor);
+		this!patchSpeed(speedPatchMap);
+		data_alert.connect_data_processor(odefault___Data_Processor_0_vm_0);
+	}
+
+	Unit undeploy_aux() {
+		IData_Processor odefault___Data_Processor_0_vm_0 = nth(ls_IData_Processor,0);
+		data_alert.diconnect_data_processor();
+		while ( !isEmpty(ls_DeploymentComponent) ) {
+			cloudProvider.shutdownInstance(head(ls_DeploymentComponent));
+			ls_DeploymentComponent = tail(ls_DeploymentComponent);
+		}
+	}
+
+	Unit patchSpeed(Map<DeploymentComponent,Rat> dcs) {
+		foreach(entry in entries(dcs)) {
+			DeploymentComponent dc = fst(entry);
+			Rat coreUsed = snd(entry);
+			InfRat speed_aux = await dc!total(Speed);
+			Rat total_speed = case speed_aux {
+				Fin(x) => x;
+				_ => -1;
+			};
+			if(total_speed != -1) {
+				Rat totalCore = await dc!getNumberOfCores();
+				Rat speedPerCore = total_speed / totalCore;
+				dc!decrementResources(total_speed - (speedPerCore * coreUsed), Speed);
+			}
+		}
+	}
+}

@@ -5,28 +5,40 @@ import * from ABS.DC;
 import * from Param;
 import * from Monitor;
 import * from Architecture;
-import * from Migration;
+import * from ToCloudMigration;
+import * from ToEdgeMigration;
 import * from Setup;
 
 
 { 
     CloudProvider provider = new CloudProvider("Amazon");
-    provider.setInstanceDescriptions(map[Pair("EDGE", map[Pair(Bandwidth,edge_bandwidth())]),Pair("CLOUD", map[Pair(Bandwidth,cloud_bandwidth())])]);
-    DC edge = provider.launchInstanceNamed("EDGE");
-    DC cloud = provider.launchInstanceNamed("CLOUD");
-    String zone = "cloud";
-    Setup setup = new Setup(provider, cloud);
-    setup.deploy();
 
-    List<IStorage> tmpIStorage = setup.getIStorage();
-    List<IData_Collector> tmpIData_Collector = setup.getIData_Collector();
-    List<IData_Alert> tmpIData_Alert = setup.getIData_Alert();
+    Int i = 0;
+
+    List<IStorage> storages = list[];
+    List<ToCloudMigration> cloud_migrations = list[];
+    List<ToEdgeMigration> edge_migrations = list[];
+    List<String> zones = list[];
 
 
-    IStorage storage = head(tmpIStorage);
-    IData_Collector data_collector = head(tmpIData_Collector);
-    IData_Alert data_alert = head(tmpIData_Alert);
-    Migration cloud_migration = new Migration(cloud, data_collector, data_alert, storage);
-    Migration edge_migration = new Migration(edge, data_collector, data_alert, storage);
-    IMonitor monitor = new Monitor(edge_migration, cloud_migration, zone, storage);
+    while(i < n_pipelines()) {
+        Setup setup = new Setup(provider, i);
+        setup.deploy();
+        List<IStorage> tmpIStorage = setup.getIStorage();
+        List<IData_Collector> tmpIData_Collector = setup.getIData_Collector();
+        List<IData_Alert> tmpIData_Alert = setup.getIData_Alert();
+        IStorage storage = head(tmpIStorage);
+        IData_Collector data_collector = head(tmpIData_Collector);
+        IData_Alert data_alert = head(tmpIData_Alert);
+        ToCloudMigration cloud_migration = new ToCloudMigration(provider, data_collector, data_alert, storage);
+        cloud_migration.deploy();
+        ToEdgeMigration edge_migration = new ToEdgeMigration(provider, data_collector, data_alert, storage);
+        storages = appendright(storages,storage);
+        cloud_migrations = appendright(cloud_migrations, cloud_migration);
+        edge_migrations = appendright(edge_migrations, edge_migration);
+        zones = appendright(zones, "cloud");
+        i = i + 1;
+    }
+
+    IMonitor monitor = new Monitor(edge_migrations, cloud_migrations, zones, storages);
 }

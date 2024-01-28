@@ -1,57 +1,58 @@
-module Setup;
+module ToCloudMigration;
 export *;
 import * from ABS.DC;
 import * from Architecture;
+import * from Param;
 
-interface Setup{
+interface ToCloudMigration{
 	List<IStorage> getIStorage();
+	List<IData_Processor> getIData_Processor();
 	List<IData_Alert> getIData_Alert();
 	List<IData_Collector> getIData_Collector();
-	List<IData_Processor> getIData_Processor();
 	List<DeploymentComponent> getDeploymentComponent();
 	Unit deploy();
 	Unit undeploy();
 }
 
-class Setup(CloudProvider cloudProvider, Int id) implements Setup{
+class ToCloudMigration(CloudProvider cloudProvider, IData_Collector data_collector, IData_Alert data_alert, IStorage storage) implements ToCloudMigration{
 
 	List<List<IStorage>> ls_ls_IStorage = Nil;
 	List<IStorage> ls_IStorage = Nil;
+	List<List<IData_Processor>> ls_ls_IData_Processor = Nil;
+	List<IData_Processor> ls_IData_Processor = Nil;
 	List<List<IData_Alert>> ls_ls_IData_Alert = Nil;
 	List<IData_Alert> ls_IData_Alert = Nil;
 	List<List<IData_Collector>> ls_ls_IData_Collector = Nil;
 	List<IData_Collector> ls_IData_Collector = Nil;
-	List<List<IData_Processor>> ls_ls_IData_Processor = Nil;
-	List<IData_Processor> ls_IData_Processor = Nil;
 	List<List<DeploymentComponent>> ls_ls_DeploymentComponent = Nil;
 	List<DeploymentComponent> ls_DeploymentComponent = Nil;
 	Rat waiting_time = 100;
 	{
-		cloudProvider.addInstanceDescription(Pair("cloud",
-			map[Pair(CostPerInterval,199)
+		cloudProvider.addInstanceDescription(Pair("CLOUD",
+			map[Pair(CostPerInterval,100)
 			,Pair(PaymentInterval,1)
-			,Pair(Cores,10)
-			,Pair(Memory,800)
-			,Pair(Bandwidth,500)
-			,Pair(Speed,20)
+			,Pair(Cores,2)
+			,Pair(Memory,375)
+			,Pair(Bandwidth,cloud_bandwidth())
+			,Pair(Speed,10)
 			]));
 	}
 
 	List<IStorage> getIStorage() { return ls_IStorage; }
+	List<IData_Processor> getIData_Processor() { return ls_IData_Processor; }
 	List<IData_Alert> getIData_Alert() { return ls_IData_Alert; }
 	List<IData_Collector> getIData_Collector() { return ls_IData_Collector; }
-	List<IData_Processor> getIData_Processor() { return ls_IData_Processor; }
 	List<DeploymentComponent> getDeploymentComponent() { return ls_DeploymentComponent; }
 
 	Unit deploy() {
 		ls_ls_IStorage = Cons(ls_IStorage,ls_ls_IStorage);
 		ls_IStorage = Nil;
+		ls_ls_IData_Processor = Cons(ls_IData_Processor,ls_ls_IData_Processor);
+		ls_IData_Processor = Nil;
 		ls_ls_IData_Alert = Cons(ls_IData_Alert,ls_ls_IData_Alert);
 		ls_IData_Alert = Nil;
 		ls_ls_IData_Collector = Cons(ls_IData_Collector,ls_ls_IData_Collector);
 		ls_IData_Collector = Nil;
-		ls_ls_IData_Processor = Cons(ls_IData_Processor,ls_ls_IData_Processor);
-		ls_IData_Processor = Nil;
 		ls_ls_DeploymentComponent = Cons(ls_DeploymentComponent,ls_ls_DeploymentComponent);
 		ls_DeploymentComponent = Nil;
 		this.deploy_aux();
@@ -63,42 +64,34 @@ class Setup(CloudProvider cloudProvider, Int id) implements Setup{
 			ls_DeploymentComponent = head(ls_ls_DeploymentComponent);
 			ls_ls_DeploymentComponent = tail(ls_ls_DeploymentComponent);
 				ls_IStorage = head(ls_ls_IStorage);
+				ls_IData_Processor = head(ls_ls_IData_Processor);
 				ls_IData_Alert = head(ls_ls_IData_Alert);
 				ls_IData_Collector = head(ls_ls_IData_Collector);
-				ls_IData_Processor = head(ls_ls_IData_Processor);
 			ls_ls_IStorage = tail(ls_ls_IStorage);
+			ls_ls_IData_Processor = tail(ls_ls_IData_Processor);
 			ls_ls_IData_Alert = tail(ls_ls_IData_Alert);
 			ls_ls_IData_Collector = tail(ls_ls_IData_Collector);
-			ls_ls_IData_Processor = tail(ls_ls_IData_Processor);
 		}
 	}
 
 
 	Unit deploy_aux() {
 		Map<DeploymentComponent,Rat> speedPatchMap = map[];
-		DeploymentComponent cloud_0 = cloudProvider.launchInstanceNamed("cloud");
-		ls_DeploymentComponent = Cons(cloud_0,ls_DeploymentComponent);
-		speedPatchMap = put(speedPatchMap,cloud_0,0);
+		DeploymentComponent vm_0 = cloudProvider.launchInstanceNamed("CLOUD");
+		ls_DeploymentComponent = Cons(vm_0,ls_DeploymentComponent);
+		speedPatchMap = put(speedPatchMap,vm_0,0);
 		await duration(waiting_time,waiting_time);
-		[DC: cloud_0] IStorage odefault___Storage_0_cloud_0 = new Storage();
-		Rat coreRequired_odefault___Storage_0_cloud_0 = 1;
-		speedPatchMap = put(speedPatchMap, cloud_0, fromJust(lookup(speedPatchMap,cloud_0)) + coreRequired_odefault___Storage_0_cloud_0);
-		ls_IStorage = Cons(odefault___Storage_0_cloud_0, ls_IStorage);
-		[DC: cloud_0] IData_Collector odefault___Data_Collector_0_cloud_0 = new Data_Collector(id);
-		Rat coreRequired_odefault___Data_Collector_0_cloud_0 = 1;
-		speedPatchMap = put(speedPatchMap, cloud_0, fromJust(lookup(speedPatchMap,cloud_0)) + coreRequired_odefault___Data_Collector_0_cloud_0);
-		ls_IData_Collector = Cons(odefault___Data_Collector_0_cloud_0, ls_IData_Collector);
-		[DC: cloud_0] IData_Alert odefault___Data_Alert_0_cloud_0 = new Data_Alert(odefault___Storage_0_cloud_0);
-		Rat coreRequired_odefault___Data_Alert_0_cloud_0 = 1;
-		speedPatchMap = put(speedPatchMap, cloud_0, fromJust(lookup(speedPatchMap,cloud_0)) + coreRequired_odefault___Data_Alert_0_cloud_0);
-		ls_IData_Alert = Cons(odefault___Data_Alert_0_cloud_0, ls_IData_Alert);
+		[DC: vm_0] IData_Processor odefault___Data_Processor_0_vm_0 = new Data_Processor(data_collector, storage);
+		Rat coreRequired_odefault___Data_Processor_0_vm_0 = 1;
+		speedPatchMap = put(speedPatchMap, vm_0, fromJust(lookup(speedPatchMap,vm_0)) + coreRequired_odefault___Data_Processor_0_vm_0);
+		ls_IData_Processor = Cons(odefault___Data_Processor_0_vm_0, ls_IData_Processor);
 		this!patchSpeed(speedPatchMap);
+		data_alert.connect_data_processor(odefault___Data_Processor_0_vm_0);
 	}
 
 	Unit undeploy_aux() {
-		IStorage odefault___Storage_0_cloud_0 = nth(ls_IStorage,0);
-		IData_Collector odefault___Data_Collector_0_cloud_0 = nth(ls_IData_Collector,0);
-		IData_Alert odefault___Data_Alert_0_cloud_0 = nth(ls_IData_Alert,0);
+		IData_Processor odefault___Data_Processor_0_vm_0 = nth(ls_IData_Processor,0);
+		data_alert.diconnect_data_processor();
 		while ( !isEmpty(ls_DeploymentComponent) ) {
 			cloudProvider.shutdownInstance(head(ls_DeploymentComponent));
 			ls_DeploymentComponent = tail(ls_DeploymentComponent);
