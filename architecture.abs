@@ -6,7 +6,7 @@ import * from Param;
 import * from ABS.DC;
 import * from ABS.SmartDeploy;
 
-[SmartDeployCloudProvider: "{\"vm\" : {\"cost\" : 100, \"payment_interval\" : 1, \"resources\" : { \"Cores\" : 2, \"Memory\" : 375, \"Bandwidth\" : 500, \"Speed\" : 10, \"Startupduration\" : 100}}}"]
+[SmartDeployCloudProvider: "{\"vm\" : {\"cost\" : 100, \"payment_interval\" : 1, \"resources\" : { \"Cores\" : 2, \"Memory\" : 375, \"Bandwidth\" : 500, \"Speed\" : 10}}}"]
 
 //[SmartDeploy : "{\"id\":\"Setup\",\"specification\":\"Data_Alert = 1 and Data_Collector = 1 and Storage = 1\", \"DC\":[], \"obj\":[{\"name\":\"id\",\"interface\":\"Int\",\"provides\":[{\"ports\":[\"Int\"],\"num\":-1}],\"methods\" : []}], \"cloud_provider_DC_availability\":{\"cloud\" : 1},\"bind preferences\":[]}"]
 

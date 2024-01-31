@@ -26,7 +26,6 @@ class ToCloudMigration(CloudProvider cloudProvider, IData_Collector data_collect
 	List<IData_Collector> ls_IData_Collector = Nil;
 	List<List<DeploymentComponent>> ls_ls_DeploymentComponent = Nil;
 	List<DeploymentComponent> ls_DeploymentComponent = Nil;
-	Rat waiting_time = 100;
 	{
 		cloudProvider.addInstanceDescription(Pair("CLOUD",
 			map[Pair(CostPerInterval,100)
@@ -80,7 +79,6 @@ class ToCloudMigration(CloudProvider cloudProvider, IData_Collector data_collect
 		DeploymentComponent vm_0 = cloudProvider.launchInstanceNamed("CLOUD");
 		ls_DeploymentComponent = Cons(vm_0,ls_DeploymentComponent);
 		speedPatchMap = put(speedPatchMap,vm_0,0);
-		await duration(waiting_time,waiting_time);
 		[DC: vm_0] IData_Processor odefault___Data_Processor_0_vm_0 = new Data_Processor(data_collector, storage);
 		Rat coreRequired_odefault___Data_Processor_0_vm_0 = 1;
 		speedPatchMap = put(speedPatchMap, vm_0, fromJust(lookup(speedPatchMap,vm_0)) + coreRequired_odefault___Data_Processor_0_vm_0);

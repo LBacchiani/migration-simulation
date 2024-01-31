@@ -27,19 +27,19 @@ class Monitor(List<ToEdgeMigration> edge_migrations,  List<ToCloudMigration> clo
             this.log(average_lats, average_sizes, zones);
             foreach(s in storages) s.reset();
             //LATENCY BASED POLICY////
-            Int toMove = this.service_to_move_lookup(average_lats); 
-            Int toCloud = this.edge_index_lookup();
-            Rat max_lat = nth(average_lats, toMove);
-            if(max_lat > lat_threshold() || max_lat == -1) this!migrate_to_edge(toCloud, toMove);
-            else if(nth(zones,toMove) == "edge" && max_lat < lat_threshold()) this!migrate_to_cloud(toMove);
+            // Int toMove = this.service_to_move_lookup(average_lats); 
+            // Int toCloud = this.edge_index_lookup();
+            // Rat max_lat = nth(average_lats, toMove);
+            // if(max_lat > lat_threshold() || max_lat == -1) this!migrate_to_edge(toCloud, toMove);
+            // else if(nth(zones,toMove) == "edge" && max_lat < lat_threshold()) this!migrate_to_cloud(toMove);
             ///////
 
             ////BYTE BASED POLICY/////
-            // Int toMove = this.service_to_move_lookup(average_sizes); 
-            // Int toCloud = this.edge_index_lookup();
-            // Rat max_lat = nth(average_sizes, toMove);
-            // if(max_lat > byte_threshold() || max_lat == -1) this.migrate_to_edge(toCloud, toMove);
-            // else if(nth(zones,toMove) == "edge" && max_lat < byte_threshold()) this.migrate_to_cloud(toMove);
+            Int toMove = this.service_to_move_lookup(average_sizes); 
+            Int toCloud = this.edge_index_lookup();
+            Rat max_lat = nth(average_sizes, toMove);
+            if(max_lat > byte_threshold() || max_lat == -1) this.migrate_to_edge(toCloud, toMove);
+            else if(nth(zones,toMove) == "edge" && max_lat < byte_threshold()) this.migrate_to_cloud(toMove);
             ///////
 
             if(time % 2 == 0) this.update_sizes();
