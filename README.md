@@ -14,7 +14,7 @@ This file additionally containes the declarative specification of services and v
 
 The entity controlling the system orchestration process is implemented in [orchestrator.abs](./orchestrator.abs). In particular, it implements the migration policies adopted in [1], i.e., one based on latency and one based on the amount of data sent. 
 
-The orchestrations folder contains the deployment orchestrations synthesized via SmartDeployer [2].
+The [orchestrations folder](./orchestrations) contains the deployment orchestrations synthesized via SmartDeployer [2].
 
 Finally, [param.abs](./param.abs) and [main.abs](./main.abs) respectively contains the parameter inputed to the simulation and the main block to run such simulation.
 
