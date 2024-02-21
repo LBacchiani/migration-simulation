@@ -24,11 +24,27 @@ In this section, we report the comparison between the [real-world experimental r
 
 As can be seen in the figures below, reporting the results of experiments adopting a latency-based policy, the ABS implementation (the right-most figure) precisely reproduces the real-world behaviour (left-most figure).
 
-<img src="images/readme/rw_latency.png" alt="Real-world implementation" width="500" id="rw-latency"/> <img src="images/readme/abs_latency.png" alt="ABS implementation" width="500" id="abs-latency"/>
+<figure>
+  <figcaption>Latency-based policy real-world implementation</figcaption>
+  <img src="images/readme/rw_latency.png" alt="Real-world implementation" width="700" id="rw-latency"/>
+</figure>
 
-As expected, nothing changes if we apply a differenct migration policy: as can be seen in the figures below, the real-world behaviour (left-most figure) is, again, precisely reproduced by the ABS implementation (the right-most figure).
+<figure>
+  <figcaption>Latency-based policy ABS implementation</figcaption>
+  <img src="images/readme/abs_latency.png" alt="ABS implementation" width="700" id="abs-latency"/>
+</figure>
 
-<img src="images/readme/rw_byte.png" alt="Real-world implementation" width="500"/> <img src="images/readme/abs_byte.png" alt="ABS implementation" width="500"/>
+As expected, nothing changes if we apply a differenct migration policy: as can be seen in the figures below, the [real-world behaviour](#rw-byte) is, again, precisely reproduced by the [ABS implementation](#abs-byte).
+
+<figure>
+  <figcaption>Byte-based policy real-world implementation</figcaption>
+  <img src="images/readme/rw_byte.png" alt="Real-world implementation" width="700" id="rw-byte"/>
+</figure>
+
+<figure>
+  <figcaption>Byte-based policy ABS implementation</figcaption>
+  <img src="images/readme/abs_byte.png" alt="ABS implementation" width="700"  id="abs-byte"/>
+</figure>
 
 Finally, to further prove that the ABS implementation reproduce the real-world behaviour, let's consider the table below. As can be seen, both implementations suggest that both policies (latency-based and byte-based) perform equally, but the latter executes less swaps (i.e., migration of the Data Processor).
 
