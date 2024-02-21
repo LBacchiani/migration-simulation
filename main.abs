@@ -3,7 +3,7 @@ module Main;
 export *;
 import * from ABS.DC;
 import * from Param;
-import * from Monitor;
+import * from Orchestrator;
 import * from Architecture;
 import * from ToCloudMigration;
 import * from ToEdgeMigration;
@@ -40,5 +40,5 @@ import * from Setup;
         i = i + 1;
     }
 
-    IMonitor monitor = new Monitor(edge_migrations, cloud_migrations, zones, storages);
+    IOrchestrator monitor = new Orchestrator(edge_migrations, cloud_migrations, zones, storages);
 }
