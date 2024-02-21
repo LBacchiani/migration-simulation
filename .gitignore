@@ -1,2 +1,5 @@
 gen/
 *.sh
+
+.ipynb_checkpoints/
+.DS_Store
