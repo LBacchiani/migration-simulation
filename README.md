@@ -1,4 +1,7 @@
 
+<img src="images/readme/rw_latency.png" alt="Real-world implementation" width="400"/> <img src="images/readme/abs_latency.png" alt="ABS implementation" width="400"/>
+
+
 | | Latency-based policy (Real-world) | Byte-based policy (Real-world)| Latency-based policy (ABS) | Byte-based policy (ABS)|
 |-----------------|-----------------|-----------------|-----------------|-----------------|
 | Pipeline 1: swaps |11 | 4 | 8 | 5 |
