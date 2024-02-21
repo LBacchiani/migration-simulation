@@ -20,9 +20,9 @@ Finally, [param.abs](./param.abs) and [main.abs](./main.abs) respectively contai
 
 ## Experimental Results
 
-In this section, we report the comparison between the [real-world experimental results](#rw-latency) and [those from the ABS simulation](#abs-latency). To model our ABS simulations, we use the same data from [1].
+In this section, we report the comparison between the real-world experimental results and those from the ABS simulation. To model our ABS simulations, we use data from [1].
 
-As can be seen in the figures below, reporting the results of experiments adopting a latency-based policy, the ABS implementation (the right-most figure) precisely reproduces the real-world behaviour (left-most figure).
+As can be seen in the figures below, reporting the results of experiments adopting a latency-based policy, the [ABS implementation](#abs-latency) precisely reproduces the [real-world behaviour](#rw-latency).
 
 <figure>
   <figcaption>Latency-based policy real-world implementation</figcaption>
