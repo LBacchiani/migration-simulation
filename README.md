@@ -20,11 +20,11 @@ Finally, [param.abs](./param.abs) and [main.abs](./main.abs) respectively contai
 
 ## Experimental Results
 
-In this section, we report the comparison between the real-world experimental results (left-side figures) and those from the ABS simulation (right-side figures). To model our ABS simulations, we use the same data from [1].
+In this section, we report the comparison between the [real-world experimental results](#rw-latency) and [those from the ABS simulation](#abs-latency). To model our ABS simulations, we use the same data from [1].
 
 As can be seen in the figures below, reporting the results of experiments adopting a latency-based policy, the ABS implementation (the right-most figure) precisely reproduces the real-world behaviour (left-most figure).
 
-<img src="images/readme/rw_latency.png" alt="Real-world implementation" width="500"/> <img src="images/readme/abs_latency.png" alt="ABS implementation" width="500"/>
+<img src="images/readme/rw_latency.png" alt="Real-world implementation" width="500" id="rw-latency"/> <img src="images/readme/abs_latency.png" alt="ABS implementation" width="500" id="abs-latency"/>
 
 As expected, nothing changes if we apply a differenct migration policy: as can be seen in the figures below, the real-world behaviour (left-most figure) is, again, precisely reproduced by the ABS implementation (the right-most figure).
 
