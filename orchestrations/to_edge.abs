@@ -7,39 +7,36 @@ import * from Param;
 interface ToEdgeMigration{
 	List<IData_Alert> getIData_Alert();
 	List<IData_Processor> getIData_Processor();
-	List<IStorage> getIStorage();
 	List<IData_Collector> getIData_Collector();
 	List<DeploymentComponent> getDeploymentComponent();
 	Unit deploy();
 	Unit undeploy();
 }
 
-class ToEdgeMigration(CloudProvider cloudProvider, IData_Collector data_collector, IData_Alert data_alert, IStorage storage) implements ToEdgeMigration{
+class ToEdgeMigration(CloudProvider cloudProvider, IData_Collector data_collector,  IDP_NodePort np) implements ToEdgeMigration{
 
 	List<List<IData_Alert>> ls_ls_IData_Alert = Nil;
 	List<IData_Alert> ls_IData_Alert = Nil;
 	List<List<IData_Processor>> ls_ls_IData_Processor = Nil;
 	List<IData_Processor> ls_IData_Processor = Nil;
-	List<List<IStorage>> ls_ls_IStorage = Nil;
-	List<IStorage> ls_IStorage = Nil;
 	List<List<IData_Collector>> ls_ls_IData_Collector = Nil;
 	List<IData_Collector> ls_IData_Collector = Nil;
 	List<List<DeploymentComponent>> ls_ls_DeploymentComponent = Nil;
 	List<DeploymentComponent> ls_DeploymentComponent = Nil;
+	Rat waiting_time = 25;
 	{
 		cloudProvider.addInstanceDescription(Pair("EDGE",
 			map[Pair(CostPerInterval,100)
 			,Pair(PaymentInterval,1)
 			,Pair(Cores,2)
 			,Pair(Memory,375)
-			,Pair(Bandwidth,edge_bandwidth())
+			,Pair(Bandwidth,bandwidth())
 			,Pair(Speed,10)
 			]));
 	}
 
 	List<IData_Alert> getIData_Alert() { return ls_IData_Alert; }
 	List<IData_Processor> getIData_Processor() { return ls_IData_Processor; }
-	List<IStorage> getIStorage() { return ls_IStorage; }
 	List<IData_Collector> getIData_Collector() { return ls_IData_Collector; }
 	List<DeploymentComponent> getDeploymentComponent() { return ls_DeploymentComponent; }
 
@@ -48,8 +45,6 @@ class ToEdgeMigration(CloudProvider cloudProvider, IData_Collector data_collecto
 		ls_IData_Alert = Nil;
 		ls_ls_IData_Processor = Cons(ls_IData_Processor,ls_ls_IData_Processor);
 		ls_IData_Processor = Nil;
-		ls_ls_IStorage = Cons(ls_IStorage,ls_ls_IStorage);
-		ls_IStorage = Nil;
 		ls_ls_IData_Collector = Cons(ls_IData_Collector,ls_ls_IData_Collector);
 		ls_IData_Collector = Nil;
 		ls_ls_DeploymentComponent = Cons(ls_DeploymentComponent,ls_ls_DeploymentComponent);
@@ -64,11 +59,9 @@ class ToEdgeMigration(CloudProvider cloudProvider, IData_Collector data_collecto
 			ls_ls_DeploymentComponent = tail(ls_ls_DeploymentComponent);
 				ls_IData_Alert = head(ls_ls_IData_Alert);
 				ls_IData_Processor = head(ls_ls_IData_Processor);
-				ls_IStorage = head(ls_ls_IStorage);
 				ls_IData_Collector = head(ls_ls_IData_Collector);
 			ls_ls_IData_Alert = tail(ls_ls_IData_Alert);
 			ls_ls_IData_Processor = tail(ls_ls_IData_Processor);
-			ls_ls_IStorage = tail(ls_ls_IStorage);
 			ls_ls_IData_Collector = tail(ls_ls_IData_Collector);
 		}
 	}
@@ -79,17 +72,18 @@ class ToEdgeMigration(CloudProvider cloudProvider, IData_Collector data_collecto
 		DeploymentComponent vm_0 = cloudProvider.launchInstanceNamed("EDGE");
 		ls_DeploymentComponent = Cons(vm_0,ls_DeploymentComponent);
 		speedPatchMap = put(speedPatchMap,vm_0,0);
-		[DC: vm_0] IData_Processor odefault___Data_Processor_0_vm_0 = new Data_Processor(data_collector, storage);
+		// await duration(waiting_time,waiting_time);
+		[DC: vm_0] IData_Processor odefault___Data_Processor_0_vm_0 = new Data_Processor(data_collector);
 		Rat coreRequired_odefault___Data_Processor_0_vm_0 = 1;
 		speedPatchMap = put(speedPatchMap, vm_0, fromJust(lookup(speedPatchMap,vm_0)) + coreRequired_odefault___Data_Processor_0_vm_0);
 		ls_IData_Processor = Cons(odefault___Data_Processor_0_vm_0, ls_IData_Processor);
 		this!patchSpeed(speedPatchMap);
-		data_alert.connect_data_processor(odefault___Data_Processor_0_vm_0);
+		np.connect(odefault___Data_Processor_0_vm_0);
 	}
 
 	Unit undeploy_aux() {
 		IData_Processor odefault___Data_Processor_0_vm_0 = nth(ls_IData_Processor,0);
-		data_alert.diconnect_data_processor();
+		np.disconnect();
 		while ( !isEmpty(ls_DeploymentComponent) ) {
 			cloudProvider.shutdownInstance(head(ls_DeploymentComponent));
 			ls_DeploymentComponent = tail(ls_DeploymentComponent);

@@ -12,42 +12,73 @@ import * from ToCloudMigration;
 
 interface IOrchestrator {}
 
-class Orchestrator(List<ToEdgeMigration> edge_migrations,  List<ToCloudMigration> cloud_migrations, List<String> zs, List<IStorage> storages) implements IOrchestrator {
+class Orchestrator(List<ToEdgeMigration> edge_migrations,  List<ToCloudMigration> cloud_migrations, List<String> zs, Map<Int, IData_Processor> processors, Map<Int, IData_Collector> collectors) implements IOrchestrator {
 
     List<String> zones = zs;
     Int time = 0;
 
     Unit run() {
         while(time < 16) {
-            await duration(monitoring_inverval(), monitoring_inverval());
-            List<List<Rat>> pipeline_latencies = this.fetch_metric("latency");
-            List<List<Rat>> pipeline_sizes = this.fetch_metric("size");
-            List<Rat> average_lats = this.compute_averages(pipeline_latencies);
-            List<Rat> average_sizes = this.compute_averages(pipeline_sizes);
-            this.log(average_lats, average_sizes, zones);
-            foreach(s in storages) s.reset();
+            await duration(monitoring_inverval());
+            List<Pair<Rat,Rat>> stats = await this!avgStats();
+            this.log(stats, zones);
+            List<Rat> average_lats = map((Pair<Rat,Rat> p) => fst(p))(stats);
+            List<Rat> average_sizes = map((Pair<Rat,Rat> p) => snd(p))(stats);
+
             //LATENCY BASED POLICY////
-            // Int toMove = this.service_to_move_lookup(average_lats); 
-            // Int toCloud = this.edge_index_lookup();
-            // Rat max_lat = nth(average_lats, toMove);
-            // if(max_lat > lat_threshold() || max_lat == -1) this!migrate_to_edge(toCloud, toMove);
-            // else if(nth(zones,toMove) == "edge" && max_lat < lat_threshold()) this!migrate_to_cloud(toMove);
+            // Int move = await this!service_to_move_lookup(average_lats); 
+            // Rat max_lat = nth(average_lats, move);
+            // Rat size = nth(average_sizes, move);
+            // if(max_lat > lat_threshold_to_edge() || max_lat == -1) {
+            //     Bool edge_free = await this!isEdgeFree();
+            //     if(edge_free) this!move_to_edge(move);
+            //     else {
+            //         Int toCloud = await this!edge_index_lookup();
+            //         if(toCloud != move) {
+            //             this!move_to_cloud(toCloud);
+            //             this!move_to_edge(move);
+            //         }
+            //     }
+            // }
+            // else if(nth(zones, move) == "edge" && max_lat < lat_threshold_to_cloud() && size < size_threshold()) this!move_to_cloud(move);
             ///////
 
-            ////BYTE BASED POLICY/////
-            Int toMove = this.service_to_move_lookup(average_sizes); 
-            Int toCloud = this.edge_index_lookup();
-            Rat max_lat = nth(average_sizes, toMove);
-            if(max_lat > byte_threshold() || max_lat == -1) this.migrate_to_edge(toCloud, toMove);
-            else if(nth(zones,toMove) == "edge" && max_lat < byte_threshold()) this.migrate_to_cloud(toMove);
+            //SIZE BASED POLICY/////
+            Int move = await this!service_to_move_lookup(average_sizes); 
+            Rat max_size = nth(average_sizes, move);
+            if(max_size > size_threshold() || max_size == -1) {
+                Bool edge_free = await this!isEdgeFree();
+                if(edge_free) this!move_to_edge(move);
+                else {
+                    Int toCloud = await this!edge_index_lookup();
+                    if(toCloud != move) {
+                        this!move_to_cloud(toCloud);
+                        this!move_to_edge(move);
+                    }
+                }
+            }
+            else if(nth(zones, move) == "edge" && max_size < size_threshold()) this!move_to_cloud(move);
             ///////
 
-            if(time % 2 == 0) this.update_sizes();
             time = time + 1;
+            this!resetStats();
+            if(time % 2 == 0) this!update_sizes();
         }
-        println("STOP MONITOR");
+        println("-------");
     }
 
+    List<Pair<Rat,Rat>> avgStats() {
+        List<Pair<Rat,Rat>> stats = list[];
+        foreach(v in values(processors)) {
+            Pair<Rat,Rat> s = await v!getStats();
+            stats = appendright(stats,s);
+        }
+        return stats;
+    }
+
+    Unit resetStats() {foreach(v in values(processors)) v!resetStats();}
+
+    Unit update_sizes() {foreach(v,i in values(collectors)) v!setSize(nth(zones,i));}
 
     Int service_to_move_lookup(List<Rat> values) {
         Rat max_value = -2;
@@ -69,32 +100,23 @@ class Orchestrator(List<ToEdgeMigration> edge_migrations,  List<ToCloudMigration
         return toMove;
     }
 
-    Unit migrate_to_edge(Int toCloud, Int toMove) {
-        if(toCloud == -1) {
-            nth(cloud_migrations, toMove)!undeploy();
-            nth(edge_migrations, toMove)!deploy();
-        }
-        else {
-            if(toMove != toCloud) {
-                nth(edge_migrations, toCloud)!undeploy();
-                nth(cloud_migrations, toCloud)!deploy();
-                nth(cloud_migrations, toMove)!undeploy();
-                nth(edge_migrations, toMove)!deploy();
-                nth(storages,toCloud)!setZone("cloud");
-            }
-        }
-        nth(storages,toMove)!setZone("edge");
-        this.update_zones(toMove);
+    Bool isEdgeFree() {return length(filter((String z) => z == "edge")(zones)) == 0;}
+
+    Unit move_to_edge(Int i) {
+        nth(edge_migrations, i)!deploy();
+        nth(cloud_migrations,i)!undeploy();
+        List<IData_Processor> edge = await nth(edge_migrations, i)!getIData_Processor();
+        processors = put(processors, i, head(edge));
+        this!update_zones(i, "edge");
     }
 
-    Unit migrate_to_cloud(Int toMove) {
-        nth(edge_migrations, toMove)!undeploy();
-        nth(cloud_migrations, toMove)!deploy();
-        nth(storages,toMove)!setZone("cloud");
-        toMove = -1;
-        this.update_zones(toMove);
+    Unit move_to_cloud(Int i) {
+        nth(cloud_migrations, i)!deploy();
+        nth(edge_migrations,i)!undeploy();
+        List<IData_Processor> cloud = await nth(cloud_migrations, i)!getIData_Processor();
+        processors = put(processors, i, head(cloud));
+        this!update_zones(i, "cloud");
     }
-
 
     Int edge_index_lookup() {
         Int target = -1;
@@ -104,56 +126,34 @@ class Orchestrator(List<ToEdgeMigration> edge_migrations,  List<ToCloudMigration
         return target;
     }
 
-    Unit update_zones(Int toUpdate) {
-        zones = list[];
+    Unit update_zones(Int update, String z) {
+        List<String> tmp = list[];
         Int i = 0;
-        while(i < n_pipelines()) {
-            if(i != toUpdate) zones = appendright(zones, "cloud");
-            else zones = appendright(zones, "edge");
+         while(i < n_pipelines()) {
+            if(i != update) tmp = appendright(tmp, nth(zones, i));
+            else tmp = appendright(tmp, z);
             i = i + 1;
-        }
-    }    
-
-    Unit update_sizes() {foreach(s in storages) s.update_size();}
-
-    List<List<Rat>> fetch_metric(String metric) {
-        List<List<Rat>> metrics_list = list[];
-        foreach(s in storages) {
-            List<Rat> m = list[];
-            if(metric == "latency") m = s.get_latency_timeserie();
-            else m = s.get_size_timeserie();
-            metrics_list = appendright(metrics_list,m);
-        }
-        return metrics_list;
+         }
+         zones = tmp;
     }
 
-    List<Rat> compute_averages(List<List<Rat>> list_values) {
-        List<Rat> averages = list[];
-        foreach(values in list_values) {
-            Rat avg = -1;
-            if(length(values) > 0) avg = foldl((Rat a, Rat b) => a + b)(values, 0) / length(values);
-            averages = appendright(averages, avg);
-        }
-        return averages;
-    }
-
-    Unit log(List<Rat> avg_latencies,  List<Rat> avg_sizes, List<String> zones) {
+    Unit log(List<Pair<Rat,Rat>> stats, List<String> zones) {
          String toPrint = "";
          Int i = 0;
          while(i < n_pipelines()) {
             toPrint = toPrint + "Pipeline" + toString(i+1) + "[zone:" + nth(zones,i) + "]:"; 
-            Float avg_size_mb = float(nth(avg_sizes,i) / pow(10,6));
-            Float avg_lat_ms = float(1000 * nth(avg_latencies,i) / sec_to_time_unit());
+            Float avg_size_mb = float(snd(nth(stats,i)) / pow(10,6));
+            Float avg_lat_ms = float(1000 * fst(nth(stats,i)) / sec_to_time_unit());
             if(avg_lat_ms >= 0.0 && avg_size_mb >= 0.0) toPrint = toPrint + "(" + toString(avg_lat_ms) + "," + toString(avg_size_mb) + ") ";
-            else {
-                String zone = nth(zones,i);
-                Rat t = 0;
-                Int index = nth(storages,i).getIndex();
-                Rat bytes = nth(nth(sizes(),i),index) * nth(nth(sizes(),i),index) * byte_header_size() / pow(10,6);
-                if(zone == "cloud") t = 1000 * bytes * pow(10,6) / (sec_to_time_unit() * cloud_bandwidth());
-                else t = 1000 * bytes * pow(10,6) / (sec_to_time_unit() * edge_bandwidth());
-                toPrint = toPrint + "(" + toString(float(t)) + "," + toString(float(bytes)) + ") ";
-            }
+            // else {
+            //     String zone = nth(zones,i);
+            //     Rat t = 0;
+            //     Int index = nth(storages,i).getIndex();
+            //     Rat bytes = nth(nth(sizes(),i),index) * nth(nth(sizes(),i),index) * byte_header_size() / pow(10,6);
+            //     if(zone == "cloud") t = 1000 * bytes * pow(10,6) / (sec_to_time_unit() * bandwidth());
+            //     else t = 1000 * bytes * pow(10,6) / (sec_to_time_unit() * bandwidth());
+            //     toPrint = toPrint + "(" + toString(float(t)) + "," + toString(float(bytes)) + ") ";
+            // }
             i = i + 1;
          }
          println(toPrint);

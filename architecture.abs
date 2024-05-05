@@ -6,172 +6,131 @@ import * from Param;
 import * from ABS.DC;
 import * from ABS.SmartDeploy;
 
-[SmartDeployCloudProvider: "{\"vm\" : {\"cost\" : 100, \"payment_interval\" : 1, \"resources\" : { \"Cores\" : 2, \"Memory\" : 375, \"Bandwidth\" : 500, \"Speed\" : 10}}}"]
+[SmartDeployCloudProvider: "{\"vm\" : {\"cost\" : 100, \"payment_interval\" : 1, \"resources\" : { \"Cores\" : 2, \"Memory\" : 375, \"Bandwidth\" : 37500000, \"Speed\" : 10, \"Startupduration\" : 100}}}"]
 
-//[SmartDeploy : "{\"id\":\"Setup\",\"specification\":\"Data_Alert = 1 and Data_Collector = 1 and Storage = 1\", \"DC\":[], \"obj\":[{\"name\":\"id\",\"interface\":\"Int\",\"provides\":[{\"ports\":[\"Int\"],\"num\":-1}],\"methods\" : []}], \"cloud_provider_DC_availability\":{\"cloud\" : 1},\"bind preferences\":[]}"]
+//[SmartDeploy : "{\"id\":\"Setup\",\"specification\":\"Data_Alert = 1 and Data_Collector = 1\", \"DC\":[], \"obj\":[{\"name\":\"id\",\"interface\":\"Int\",\"provides\":[{\"ports\":[\"Int\"],\"num\":-1}],\"methods\" : []}], \"cloud_provider_DC_availability\":{\"cloud\" : 1},\"bind preferences\":[]}"]
 
-//[SmartDeploy : "{\"id\":\"ToCloudMigration\",\"specification\":\"Data_Processor = 1\", \"DC\":[], \"obj\":[{\"name\":\"data_collector\",\"interface\":\"IData_Collector\",\"provides\":[{\"ports\":[\"IData_Collector\"],\"num\":-1}],\"methods\" : []}, {\"name\":\"data_alert\",\"interface\":\"IData_Alert\",\"provides\":[{\"ports\":[\"IData_Alert\"],\"num\":-1}],\"methods\" : [{\"add\" : {\"name\" : \"connect_data_processor\",\"param_type\" : \"IData_Processor\"},  \"remove\" : {\"name\" : \"diconnect_data_processor\",\"return_type\" : \"IData_Processor\"}}]}, {\"name\":\"storage\",\"interface\":\"IStorage\",\"provides\":[{\"ports\":[\"IStorage\"],\"num\":-1}],\"methods\" : []}], \"cloud_provider_DC_availability\":{\"vm\" : 1},\"bind preferences\":[\"((forall ?x of type Data_Processor in '.*' :  forall ?y of type data_alert in '.*' : ?x used by ?y))\"]}"]
+//[SmartDeploy : "{\"id\":\"ToCloudMigration\",\"specification\":\"Data_Processor = 1\", \"DC\":[], \"obj\":[{\"name\":\"data_collector\",\"interface\":\"IData_Collector\",\"provides\":[{\"ports\":[\"IData_Collector\"],\"num\":-1}],\"methods\" : []}, {\"name\":\"data_alert\",\"interface\":\"IData_Alert\",\"provides\":[{\"ports\":[\"IData_Alert\"],\"num\":-1}],\"methods\" : [{\"add\" : {\"name\" : \"connect_data_processor\",\"param_type\" : \"IData_Processor\"},  \"remove\" : {\"name\" : \"diconnect_data_processor\",\"return_type\" : \"IData_Processor\"}}]}], \"cloud_provider_DC_availability\":{\"vm\" : 1},\"bind preferences\":[\"((forall ?x of type Data_Processor in '.*' :  forall ?y of type data_alert in '.*' : ?x used by ?y))\"]}"]
 
-[SmartDeploy : "{\"id\":\"ToEdgeMigration\",\"specification\":\"Data_Processor = 1\", \"DC\":[], \"obj\":[{\"name\":\"data_collector\",\"interface\":\"IData_Collector\",\"provides\":[{\"ports\":[\"IData_Collector\"],\"num\":-1}],\"methods\" : []}, {\"name\":\"data_alert\",\"interface\":\"IData_Alert\",\"provides\":[{\"ports\":[\"IData_Alert\"],\"num\":-1}],\"methods\" : [{\"add\" : {\"name\" : \"connect_data_processor\",\"param_type\" : \"IData_Processor\"},  \"remove\" : {\"name\" : \"diconnect_data_processor\",\"return_type\" : \"IData_Processor\"}}]}, {\"name\":\"storage\",\"interface\":\"IStorage\",\"provides\":[{\"ports\":[\"IStorage\"],\"num\":-1}],\"methods\" : []}], \"cloud_provider_DC_availability\":{\"vm\" : 1},\"bind preferences\":[\"((forall ?x of type Data_Processor in '.*' :  forall ?y of type data_alert in '.*' : ?x used by ?y))\"]}"]
+// [SmartDeploy : "{\"id\":\"ToEdgeMigration\",\"specification\":\"Data_Processor = 1\", \"DC\":[], \"obj\":[{\"name\":\"data_collector\",\"interface\":\"IData_Collector\",\"provides\":[{\"ports\":[\"IData_Collector\"],\"num\":-1}],\"methods\" : []}, {\"name\":\"data_alert\",\"interface\":\"IData_Alert\",\"provides\":[{\"ports\":[\"IData_Alert\"],\"num\":-1}],\"methods\" : [{\"add\" : {\"name\" : \"connect_data_processor\",\"param_type\" : \"IData_Processor\"},  \"remove\" : {\"name\" : \"diconnect_data_processor\",\"return_type\" : \"IData_Processor\"}}]}], \"cloud_provider_DC_availability\":{\"vm\" : 1},\"bind preferences\":[\"((forall ?x of type Data_Processor in '.*' :  forall ?y of type data_alert in '.*' : ?x used by ?y))\"]}"]
 
-[SmartDeployCost : "{\"class\" : \"Data_Alert\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 50}, \"sig\":[{\"kind\" : \"require\",\"type\" : \"IStorage\"}], \"methods\" : [{\"add\" : {\"name\" : \"connect_data_processor\",\"param_type\" : \"IData_Processor\"}, \"remove\" : {\"name\" : \"diconnect_data_processor\", \"return_type\" : \"IData_Processor\"}}]}]}"]
-interface IData_Alert {
-    Unit connect_data_processor(IData_Processor processor);
-    IData_Processor diconnect_data_processor();
-}
+[SmartDeployCost : "{\"class\" : \"Data_Alert\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 50}, \"sig\":[], \"methods\" : []}]}"]
+interface IData_Alert {}
 
-class Data_Alert(IStorage storage) implements IData_Alert {
-    IData_Processor data_processor;
+class Data_Alert(IDP_NodePort np) implements IData_Alert {
     Unit run() {
         while(True) {
-            await duration(req_inverval(), req_inverval());
-            if(data_processor != null) data_processor!request();
+            await duration(req_inverval());
+            np!dispatch();
         }
-    }
-
-    Unit connect_data_processor(IData_Processor processor) {data_processor = processor;}
-
-    IData_Processor diconnect_data_processor() {
-        IData_Processor tmp = data_processor;
-        data_processor = null;
-        return tmp;
     }
 }
 
 [SmartDeployCost : "{\"class\" : \"Data_Collector\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 100}, \"sig\":[{\"kind\" : \"require\",\"type\" : \"Int\"}], \"methods\" : []}]}"]
 interface IData_Collector {
     String fetch_data();
-    Rat fetch_data_size(Int index);
+    Rat fetch_data_size();
+    Unit setSize(String z);
 }
 
-class Data_Collector(Int id) implements IData_Collector{
+class Data_Collector(Int id) implements IData_Collector {
+
+    Int index = 0;
+
+    Unit setSize(String z) {
+        Rat p = random(1000) / 1000;
+        index = index + 1;
+    }
     
     String fetch_data() {return "Some data";}
 
-    Rat fetch_data_size(Int index) {
-        Rat byte_size = nth(nth(sizes(),id), index);
-        Rat to_send = compute_data_size_to_send(byte_size);
-        return to_send;
+    Rat fetch_data_size() {
+        Rat byte_size = nth(nth(sizes(),id), index % size_length());
+        return byte_size;
+    }
+}
+
+interface IDP_NodePort {
+    Unit dispatch();
+    Unit connect(IData_Processor dp);
+    IData_Processor disconnect();
+}
+
+[SmartDeployCost : "{\"class\" : \"DP_NodePort\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 50}, \"sig\":[], \"methods\" : [{\"add\" : {\"name\" : \"connect\",\"param_type\" : \"IData_Processor\"}, \"remove\" : {\"name\" : \"diconnect\", \"return_type\" : \"IData_Processor\"}}]}]}"]
+class DP_NodePort() implements IDP_NodePort {
+
+    List<IData_Processor> instances = list[];
+
+    Unit dispatch() {
+        IData_Processor selected = nth(instances, 0);
+        selected!request();
+    }
+
+    Unit connect(IData_Processor dp) {instances = appendright(instances, dp);}
+
+    IData_Processor disconnect() {
+        IData_Processor removedInstance = nth(instances, 0);
+        instances = without(instances, removedInstance);
+        return removedInstance;
     }
 }
 
 interface IData_Processor{
     Unit request();
+    Pair<Rat,Rat> getStats();
+    Unit resetStats();
 }
 
-[SmartDeployCost : "{\"class\" : \"Data_Processor\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 100},\"sig\" : [{\"kind\" : \"require\",\"type\" : \"IData_Collector\"}, {\"kind\" : \"require\",\"type\" : \"IStorage\"}], \"methods\" : []}]}"]
-class Data_Processor(IData_Collector data_collector, IStorage storage) implements IData_Processor {
+[SmartDeployCost : "{\"class\" : \"Data_Processor\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 100},\"sig\" : [{\"kind\" : \"require\",\"type\" : \"IData_Collector\"}], \"methods\" : []}]}"]
+class Data_Processor(IData_Collector data_collector) implements IData_Processor {
 
+    Rat totLat = 0;
+    Rat totByte = 0;
+    Rat avgLat = 0;
+    Rat avgByte = 0;
+    Rat n_req = 0;
+
+     Pair<Rat,Rat> getStats() {return Pair(avgLat, avgByte);}
+
+     Unit resetStats() {
+        totLat = 0;
+        totByte = 0;
+        n_req = 0;
+        avgLat = 0;
+        avgByte = 0;
+     }
 
     Unit request() {
-        Time start = now();
         DC dc = thisDC();
         String name = dc.getName();
-        Int index = storage.getIndex();
-        Rat data_size = data_collector.fetch_data_size(index % size_length());
-        Rat increment = this.from_transmission_time_to_additional_data_size(dc);
-        [DataSize: data_size + increment] data_collector!fetch_data(); //we need to take into account the distance between sender and receiver
+        Rat data_size = data_collector.fetch_data_size();
+        Rat to_receive = compute_data_size_to_send(data_size);
+        Rat bandwidth_to_use = predict_bandwidth(data_size);
+        Rat normalized_data_size = to_receive + (to_receive * (bandwidth() - bandwidth_to_use)/bandwidth_to_use);
+        String z = "edge";
+        Time start = now();
+        [DataSize: normalized_data_size] data_collector!fetch_data();
         Rat time_elapsed = timeDifference(start,now());
-        if(substr(name, 7, 5) == "CLOUD") storage!store_values("cloud", time_elapsed, data_size);
-        else storage!store_values("edge", time_elapsed, data_size);
+        if(substr(name, 7, 5) == "CLOUD") {
+            z = "cloud";
+            Rat speed = this.getSpeed(dc);
+            [Cost: time_elapsed * (slowdown_factor() - 1) * speed] skip;
+        }
+        time_elapsed = timeDifference(start,now());
+        n_req = n_req + 1;
+        totLat = totLat + time_elapsed;
+        totByte = totByte + to_receive;
+        avgLat = totLat / n_req;
+        avgByte = totByte / n_req;
     }
 
-    //private methods
-    Rat from_transmission_time_to_additional_data_size(DC dc) {
-        Rat bandwith = this.getBandwidth(dc);
-        Rat increment = 0;
-        if(bandwith == cloud_bandwidth()) increment = cloud_bandwidth() * cloudDistance()/propagationSpeed();
-        else increment = edge_bandwidth() * edgeDistance()/propagationSpeed();
-        return increment;
-    }
-
-    Rat getBandwidth(DC dc) {
-        InfRat tmp = dc.total(Bandwidth);
-        Rat bandwith = 0;
+    Rat getSpeed(DC dc) {
+        InfRat tmp = dc.total(Speed);
+        Rat speed = 0;
         switch(tmp) {
-            Fin(x) => bandwith = x;
-            _ => bandwith = -1;
+            Fin(x) => speed = x;
+            _ => speed = -1;
         }
-        return bandwith;
+        return speed;
     }
-
-    //explanation of how DataSize is computed
-    //latency_tot = transmission time + propagation time + some other neglectable suff (queuing time...)
-    //transmission time = data size / bandwith 
-    //propagation time = distance / propagation speed
-    //for technical reason we need to model the above into DataSize
-    //given that bandwith is fixed, we can only modify data_size to 
-    //model the above. Being x the new data size to find, 
-    //latency_tot = x/bandwith = data_size/bandwith + distance/propagation_speed
-    //=> x = data_size + (distance * bandwith) / propagation_time
-}
-
-//////////STORAGE////////
-[SmartDeployCost : "{\"class\" : \"Storage\",\"scenarios\" : [{\"name\" : \"default\",\"provide\" : -1,\"cost\" : {\"Cores\" : 1,\"Memory\" : 100},\"sig\" : [], \"methods\" : []}]}"]
-
-interface IStorage {
-    Unit store_values(String z, Rat latency, Rat size);
-    List<Rat> get_latency_timeserie();
-    List<Rat> get_size_timeserie();
-    Int getIndex();
-    Unit update_size();
-    Unit setZone(String s);
-    Unit reset();
-
-}
-
-class Storage() implements IStorage {
-    List<Rat> cloud_latency_timeserie = list[];
-    List<Rat> cloud_size_timeserie = list[];
-    List<Rat> edge_latency_timeserie = list[];
-    List<Rat> edge_size_timeserie = list[];
-    Int index = 0;
-    String zone = "cloud";
-
-    
-    Unit store_values(String z, Rat latency, Rat size) {
-        if(z == zone) {
-            this.add_latency_value(latency);
-            this.add_size_value(size);
-        }
-    }
-
-    Unit setZone(String s) {zone = s;}
-
-    Int getIndex() {return index;}
-
-    Unit update_size() {index = index + 1;}
-
-    List<Rat> get_latency_timeserie() {
-        List<Rat> toRet = list[];
-        if(zone == "cloud") toRet = cloud_latency_timeserie;
-        else toRet = edge_latency_timeserie;
-        return toRet;
-    }
-
-    List<Rat> get_size_timeserie() {
-        List<Rat> toRet = list[];
-        if(zone == "cloud") toRet = cloud_size_timeserie;
-        else toRet = edge_size_timeserie;
-        return toRet;
-    }
-
-    Unit reset() {
-        cloud_latency_timeserie = list[];
-        cloud_size_timeserie = list[];
-        edge_latency_timeserie = list[];
-        edge_size_timeserie = list[];
-    }
-
-    //private methods
-
-    Unit add_latency_value(Rat value) {
-        if(zone == "cloud") cloud_latency_timeserie = appendright(cloud_latency_timeserie, value);
-        else edge_latency_timeserie = appendright(edge_latency_timeserie, value);
-    }
-
-    Unit add_size_value(Rat value) {
-        if(zone == "cloud") cloud_size_timeserie = appendright(cloud_size_timeserie, value);
-        else edge_size_timeserie = appendright(edge_size_timeserie, value);
-    } 
 }

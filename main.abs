@@ -15,30 +15,35 @@ import * from Setup;
 
     Int i = 0;
 
-    List<IStorage> storages = list[];
+    Map<Int, IData_Processor> processors = map[];
+    Map<Int, IData_Collector> collectors = map[];
     List<ToCloudMigration> cloud_migrations = list[];
     List<ToEdgeMigration> edge_migrations = list[];
     List<String> zones = list[];
-
+    String toPrint = "";
 
     while(i < n_pipelines()) {
+        toPrint =  toPrint + "Pipeline" + toString(i+1) + "[zone:cloud]:(0.0,0.0) ";
         Setup setup = new Setup(provider, i);
         setup.deploy();
-        List<IStorage> tmpIStorage = setup.getIStorage();
         List<IData_Collector> tmpIData_Collector = setup.getIData_Collector();
         List<IData_Alert> tmpIData_Alert = setup.getIData_Alert();
-        IStorage storage = head(tmpIStorage);
         IData_Collector data_collector = head(tmpIData_Collector);
+        collectors = put(collectors, i, data_collector);
         IData_Alert data_alert = head(tmpIData_Alert);
-        ToCloudMigration cloud_migration = new ToCloudMigration(provider, data_collector, data_alert, storage);
+        List<IDP_NodePort> tmpNodePort = setup.getIDP_NodePort();
+        IDP_NodePort np = head(tmpNodePort);
+        ToCloudMigration cloud_migration = new ToCloudMigration(provider, data_collector, np);
         cloud_migration.deploy();
-        ToEdgeMigration edge_migration = new ToEdgeMigration(provider, data_collector, data_alert, storage);
-        storages = appendright(storages,storage);
+        List<IData_Processor> tmpIData_Processor = cloud_migration.getIData_Processor();
+        IData_Processor data_processor = head(tmpIData_Processor);
+        processors = put(processors, i, data_processor);
+        ToEdgeMigration edge_migration = new ToEdgeMigration(provider, data_collector, np);
         cloud_migrations = appendright(cloud_migrations, cloud_migration);
         edge_migrations = appendright(edge_migrations, edge_migration);
         zones = appendright(zones, "cloud");
         i = i + 1;
     }
-
-    IOrchestrator monitor = new Orchestrator(edge_migrations, cloud_migrations, zones, storages);
+    println(toPrint);
+    IOrchestrator monitor = new Orchestrator(edge_migrations, cloud_migrations, zones, processors, collectors);
 }
