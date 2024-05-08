@@ -4,10 +4,10 @@ import * from ABS.DC;
 import * from Architecture;
 
 interface Setup{
+	List<IDP_NodePort> getIDP_NodePort();
 	List<IData_Alert> getIData_Alert();
 	List<IData_Collector> getIData_Collector();
 	List<IData_Processor> getIData_Processor();
-	List<IDP_NodePort> getIDP_NodePort();
 	List<DeploymentComponent> getDeploymentComponent();
 	Unit deploy();
 	Unit undeploy();
@@ -15,35 +15,37 @@ interface Setup{
 
 class Setup(CloudProvider cloudProvider, Int id) implements Setup{
 
+	List<List<IDP_NodePort>> ls_ls_IDP_NodePort = Nil;
+	List<IDP_NodePort> ls_IDP_NodePort = Nil;
 	List<List<IData_Alert>> ls_ls_IData_Alert = Nil;
 	List<IData_Alert> ls_IData_Alert = Nil;
 	List<List<IData_Collector>> ls_ls_IData_Collector = Nil;
 	List<IData_Collector> ls_IData_Collector = Nil;
 	List<List<IData_Processor>> ls_ls_IData_Processor = Nil;
 	List<IData_Processor> ls_IData_Processor = Nil;
-	List<List<IDP_NodePort>> ls_ls_IDP_NodePort = Nil;
-	List<IDP_NodePort> ls_IDP_NodePort = Nil;
 	List<List<DeploymentComponent>> ls_ls_DeploymentComponent = Nil;
 	List<DeploymentComponent> ls_DeploymentComponent = Nil;
-	Rat waiting_time = 100;
+	Rat waiting_time = 0;
 	{
-		cloudProvider.addInstanceDescription(Pair("cloud",
-			map[Pair(CostPerInterval,199)
+		cloudProvider.addInstanceDescription(Pair("vm",
+			map[Pair(CostPerInterval,100)
 			,Pair(PaymentInterval,1)
-			,Pair(Cores,10)
-			,Pair(Memory,800)
-			,Pair(Bandwidth,500)
-			,Pair(Speed,20)
+			,Pair(Bandwidth,1000)
+			,Pair(Memory,500)
+			,Pair(Cores,4)
+			,Pair(Speed,10)
 			]));
 	}
 
+	List<IDP_NodePort> getIDP_NodePort() { return ls_IDP_NodePort; }
 	List<IData_Alert> getIData_Alert() { return ls_IData_Alert; }
 	List<IData_Collector> getIData_Collector() { return ls_IData_Collector; }
 	List<IData_Processor> getIData_Processor() { return ls_IData_Processor; }
-	List<IDP_NodePort> getIDP_NodePort() { return ls_IDP_NodePort; }
 	List<DeploymentComponent> getDeploymentComponent() { return ls_DeploymentComponent; }
 
 	Unit deploy() {
+		ls_ls_IDP_NodePort = Cons(ls_IDP_NodePort,ls_ls_IDP_NodePort);
+		ls_IDP_NodePort = Nil;
 		ls_ls_IData_Alert = Cons(ls_IData_Alert,ls_ls_IData_Alert);
 		ls_IData_Alert = Nil;
 		ls_ls_IData_Collector = Cons(ls_IData_Collector,ls_ls_IData_Collector);
@@ -52,8 +54,6 @@ class Setup(CloudProvider cloudProvider, Int id) implements Setup{
 		ls_IData_Processor = Nil;
 		ls_ls_DeploymentComponent = Cons(ls_DeploymentComponent,ls_ls_DeploymentComponent);
 		ls_DeploymentComponent = Nil;
-		ls_ls_IDP_NodePort = Cons(ls_IDP_NodePort,ls_ls_IDP_NodePort);
-		ls_IDP_NodePort = Nil;
 		this.deploy_aux();
 	}
 
@@ -62,41 +62,43 @@ class Setup(CloudProvider cloudProvider, Int id) implements Setup{
 			this.undeploy_aux();
 			ls_DeploymentComponent = head(ls_ls_DeploymentComponent);
 			ls_ls_DeploymentComponent = tail(ls_ls_DeploymentComponent);
-			ls_IData_Alert = head(ls_ls_IData_Alert);
-			ls_IData_Collector = head(ls_ls_IData_Collector);
-			ls_IData_Processor = head(ls_ls_IData_Processor);
-			ls_IDP_NodePort = head(ls_ls_IDP_NodePort);
+				ls_IDP_NodePort = head(ls_ls_IDP_NodePort);
+				ls_IData_Alert = head(ls_ls_IData_Alert);
+				ls_IData_Collector = head(ls_ls_IData_Collector);
+				ls_IData_Processor = head(ls_ls_IData_Processor);
+			ls_ls_IDP_NodePort = tail(ls_ls_IDP_NodePort);
 			ls_ls_IData_Alert = tail(ls_ls_IData_Alert);
 			ls_ls_IData_Collector = tail(ls_ls_IData_Collector);
 			ls_ls_IData_Processor = tail(ls_ls_IData_Processor);
-			ls_ls_IDP_NodePort = tail(ls_ls_IDP_NodePort);
 		}
 	}
 
 
 	Unit deploy_aux() {
 		Map<DeploymentComponent,Rat> speedPatchMap = map[];
-		DeploymentComponent cloud_0 = cloudProvider.launchInstanceNamed("cloud");
-		ls_DeploymentComponent = Cons(cloud_0,ls_DeploymentComponent);
-		speedPatchMap = put(speedPatchMap,cloud_0,0);
-		await duration(waiting_time,waiting_time);
-		[DC: cloud_0] IDP_NodePort odefault__IDP_NodePort_0_cloud_0 = new DP_NodePort();
-		ls_IDP_NodePort = Cons(odefault__IDP_NodePort_0_cloud_0, ls_IDP_NodePort);
-		[DC: cloud_0] IData_Collector odefault___Data_Collector_0_cloud_0 = new Data_Collector(id);
-		Rat coreRequired_odefault___Data_Collector_0_cloud_0 = 1;
-		speedPatchMap = put(speedPatchMap, cloud_0, fromJust(lookup(speedPatchMap,cloud_0)) + coreRequired_odefault___Data_Collector_0_cloud_0);
-		ls_IData_Collector = Cons(odefault___Data_Collector_0_cloud_0, ls_IData_Collector);
-		[DC: cloud_0] IData_Alert odefault___Data_Alert_0_cloud_0 = new Data_Alert(odefault__IDP_NodePort_0_cloud_0);
-		Rat coreRequired_odefault___Data_Alert_0_cloud_0 = 1;
-		speedPatchMap = put(speedPatchMap, cloud_0, fromJust(lookup(speedPatchMap,cloud_0)) + coreRequired_odefault___Data_Alert_0_cloud_0);
-		ls_IData_Alert = Cons(odefault___Data_Alert_0_cloud_0, ls_IData_Alert);
+		DeploymentComponent vm_0 = cloudProvider.launchInstanceNamed("vm");
+		ls_DeploymentComponent = Cons(vm_0,ls_DeploymentComponent);
+		speedPatchMap = put(speedPatchMap,vm_0,0);
+		[DC: vm_0] IDP_NodePort odefault___DP_NodePort_0_vm_0 = new DP_NodePort();
+		Rat coreRequired_odefault___DP_NodePort_0_vm_0 = 1;
+		speedPatchMap = put(speedPatchMap, vm_0, fromJust(lookup(speedPatchMap,vm_0)) + coreRequired_odefault___DP_NodePort_0_vm_0);
+		ls_IDP_NodePort = Cons(odefault___DP_NodePort_0_vm_0, ls_IDP_NodePort);
+		[DC: vm_0] IData_Collector odefault___Data_Collector_0_vm_0 = new Data_Collector(id);
+		Rat coreRequired_odefault___Data_Collector_0_vm_0 = 1;
+		speedPatchMap = put(speedPatchMap, vm_0, fromJust(lookup(speedPatchMap,vm_0)) + coreRequired_odefault___Data_Collector_0_vm_0);
+		ls_IData_Collector = Cons(odefault___Data_Collector_0_vm_0, ls_IData_Collector);
+		[DC: vm_0] IData_Alert odefault___Data_Alert_0_vm_0 = new Data_Alert(odefault___DP_NodePort_0_vm_0);
+		Rat coreRequired_odefault___Data_Alert_0_vm_0 = 1;
+		speedPatchMap = put(speedPatchMap, vm_0, fromJust(lookup(speedPatchMap,vm_0)) + coreRequired_odefault___Data_Alert_0_vm_0);
+		ls_IData_Alert = Cons(odefault___Data_Alert_0_vm_0, ls_IData_Alert);
 		this!patchSpeed(speedPatchMap);
+		await duration(waiting_time,waiting_time);
 	}
 
 	Unit undeploy_aux() {
-		IData_Collector odefault___Data_Collector_0_cloud_0 = nth(ls_IData_Collector,0);
-		IData_Alert odefault___Data_Alert_0_cloud_0 = nth(ls_IData_Alert,0);
-		IDP_NodePort odefault__IDP_NodePort_0_cloud_0 = nth(ls_IDP_NodePort,0);
+		IDP_NodePort odefault___DP_NodePort_0_vm_0 = nth(ls_IDP_NodePort,0);
+		IData_Collector odefault___Data_Collector_0_vm_0 = nth(ls_IData_Collector,0);
+		IData_Alert odefault___Data_Alert_0_vm_0 = nth(ls_IData_Alert,0);
 		while ( !isEmpty(ls_DeploymentComponent) ) {
 			cloudProvider.shutdownInstance(head(ls_DeploymentComponent));
 			ls_DeploymentComponent = tail(ls_DeploymentComponent);

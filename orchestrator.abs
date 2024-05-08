@@ -19,6 +19,8 @@ class Orchestrator(List<ToEdgeMigration> edge_migrations,  List<ToCloudMigration
 
     Unit run() {
         while(time < 16) {
+            this!resetStats();
+            if(time % 2 == 0) this!update_sizes();
             await duration(monitoring_inverval());
             List<Pair<Rat,Rat>> stats = await this!avgStats();
             this.log(stats, zones);
@@ -59,10 +61,7 @@ class Orchestrator(List<ToEdgeMigration> edge_migrations,  List<ToCloudMigration
             }
             else if(nth(zones, move) == "edge" && max_size < size_threshold()) this!move_to_cloud(move);
             ///////
-
             time = time + 1;
-            this!resetStats();
-            if(time % 2 == 0) this!update_sizes();
         }
         println("-------");
     }

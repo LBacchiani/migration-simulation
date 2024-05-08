@@ -46,4 +46,5 @@ import * from Setup;
     }
     println(toPrint);
     IOrchestrator monitor = new Orchestrator(edge_migrations, cloud_migrations, zones, processors, collectors);
+   
 }

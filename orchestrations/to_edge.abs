@@ -2,51 +2,56 @@ module ToEdgeMigration;
 export *;
 import * from ABS.DC;
 import * from Architecture;
-import * from Param;
 
 interface ToEdgeMigration{
+	List<IDP_NodePort> getIDP_NodePort();
 	List<IData_Alert> getIData_Alert();
-	List<IData_Processor> getIData_Processor();
 	List<IData_Collector> getIData_Collector();
+	List<IData_Processor> getIData_Processor();
 	List<DeploymentComponent> getDeploymentComponent();
 	Unit deploy();
 	Unit undeploy();
 }
 
-class ToEdgeMigration(CloudProvider cloudProvider, IData_Collector data_collector,  IDP_NodePort np) implements ToEdgeMigration{
+class ToEdgeMigration(CloudProvider cloudProvider, IData_Collector data_collector, IDP_NodePort np) implements ToEdgeMigration{
 
+	List<List<IDP_NodePort>> ls_ls_IDP_NodePort = Nil;
+	List<IDP_NodePort> ls_IDP_NodePort = Nil;
 	List<List<IData_Alert>> ls_ls_IData_Alert = Nil;
 	List<IData_Alert> ls_IData_Alert = Nil;
-	List<List<IData_Processor>> ls_ls_IData_Processor = Nil;
-	List<IData_Processor> ls_IData_Processor = Nil;
 	List<List<IData_Collector>> ls_ls_IData_Collector = Nil;
 	List<IData_Collector> ls_IData_Collector = Nil;
+	List<List<IData_Processor>> ls_ls_IData_Processor = Nil;
+	List<IData_Processor> ls_IData_Processor = Nil;
 	List<List<DeploymentComponent>> ls_ls_DeploymentComponent = Nil;
 	List<DeploymentComponent> ls_DeploymentComponent = Nil;
-	Rat waiting_time = 25;
+	Rat waiting_time = 0;
 	{
-		cloudProvider.addInstanceDescription(Pair("EDGE",
+		cloudProvider.addInstanceDescription(Pair("edge",
 			map[Pair(CostPerInterval,100)
 			,Pair(PaymentInterval,1)
-			,Pair(Cores,2)
-			,Pair(Memory,375)
-			,Pair(Bandwidth,bandwidth())
+			,Pair(Bandwidth,1000)
+			,Pair(Memory,500)
+			,Pair(Cores,4)
 			,Pair(Speed,10)
 			]));
 	}
 
+	List<IDP_NodePort> getIDP_NodePort() { return ls_IDP_NodePort; }
 	List<IData_Alert> getIData_Alert() { return ls_IData_Alert; }
-	List<IData_Processor> getIData_Processor() { return ls_IData_Processor; }
 	List<IData_Collector> getIData_Collector() { return ls_IData_Collector; }
+	List<IData_Processor> getIData_Processor() { return ls_IData_Processor; }
 	List<DeploymentComponent> getDeploymentComponent() { return ls_DeploymentComponent; }
 
 	Unit deploy() {
+		ls_ls_IDP_NodePort = Cons(ls_IDP_NodePort,ls_ls_IDP_NodePort);
+		ls_IDP_NodePort = Nil;
 		ls_ls_IData_Alert = Cons(ls_IData_Alert,ls_ls_IData_Alert);
 		ls_IData_Alert = Nil;
-		ls_ls_IData_Processor = Cons(ls_IData_Processor,ls_ls_IData_Processor);
-		ls_IData_Processor = Nil;
 		ls_ls_IData_Collector = Cons(ls_IData_Collector,ls_ls_IData_Collector);
 		ls_IData_Collector = Nil;
+		ls_ls_IData_Processor = Cons(ls_IData_Processor,ls_ls_IData_Processor);
+		ls_IData_Processor = Nil;
 		ls_ls_DeploymentComponent = Cons(ls_DeploymentComponent,ls_ls_DeploymentComponent);
 		ls_DeploymentComponent = Nil;
 		this.deploy_aux();
@@ -57,27 +62,29 @@ class ToEdgeMigration(CloudProvider cloudProvider, IData_Collector data_collecto
 			this.undeploy_aux();
 			ls_DeploymentComponent = head(ls_ls_DeploymentComponent);
 			ls_ls_DeploymentComponent = tail(ls_ls_DeploymentComponent);
+				ls_IDP_NodePort = head(ls_ls_IDP_NodePort);
 				ls_IData_Alert = head(ls_ls_IData_Alert);
-				ls_IData_Processor = head(ls_ls_IData_Processor);
 				ls_IData_Collector = head(ls_ls_IData_Collector);
+				ls_IData_Processor = head(ls_ls_IData_Processor);
+			ls_ls_IDP_NodePort = tail(ls_ls_IDP_NodePort);
 			ls_ls_IData_Alert = tail(ls_ls_IData_Alert);
-			ls_ls_IData_Processor = tail(ls_ls_IData_Processor);
 			ls_ls_IData_Collector = tail(ls_ls_IData_Collector);
+			ls_ls_IData_Processor = tail(ls_ls_IData_Processor);
 		}
 	}
 
 
 	Unit deploy_aux() {
 		Map<DeploymentComponent,Rat> speedPatchMap = map[];
-		DeploymentComponent vm_0 = cloudProvider.launchInstanceNamed("EDGE");
+		DeploymentComponent vm_0 = cloudProvider.launchInstanceNamed("edge");
 		ls_DeploymentComponent = Cons(vm_0,ls_DeploymentComponent);
 		speedPatchMap = put(speedPatchMap,vm_0,0);
-		// await duration(waiting_time,waiting_time);
 		[DC: vm_0] IData_Processor odefault___Data_Processor_0_vm_0 = new Data_Processor(data_collector);
 		Rat coreRequired_odefault___Data_Processor_0_vm_0 = 1;
 		speedPatchMap = put(speedPatchMap, vm_0, fromJust(lookup(speedPatchMap,vm_0)) + coreRequired_odefault___Data_Processor_0_vm_0);
 		ls_IData_Processor = Cons(odefault___Data_Processor_0_vm_0, ls_IData_Processor);
 		this!patchSpeed(speedPatchMap);
+		await duration(waiting_time,waiting_time);
 		np.connect(odefault___Data_Processor_0_vm_0);
 	}
 
