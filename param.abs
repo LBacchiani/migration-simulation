@@ -24,7 +24,7 @@ def Rat compute_data_size_to_send(Rat curr_size) = pow(curr_size,2) * byte_heade
 ///THRESHOLDS///
 def Rat lat_threshold_to_edge() = 18/10 * sec_to_time_unit(); //threshold in sec
 def Rat lat_threshold_to_cloud() = 1 * sec_to_time_unit(); //threshold in sec
-def Rat size_threshold() = 65 * 65 * byte_header_size(); //threshold in sec
+def Rat size_threshold() = 68 * 68 * byte_header_size(); //threshold in sec
 ///THRESHOLDS///
 
 
@@ -34,8 +34,8 @@ def Map<Rat,Float> bandiwdth_usages() = map[Pair(1, 2.0), Pair(20,6.229654),Pair
 def Rat predict_bandwidth(Rat size) = pow(10,6) * rat(lookupUnsafe(bandiwdth_usages(),size))/sec_to_time_unit();
 ////TRANSMISSION SPEED///
 
-def Rat error_prob(Rat x) = (pow(x,5) * pow(10,-8) * rat(2.4)) - (pow(x,4) * pow(10,-6) * rat(9.65)) + (pow(x,3) * rat(0.001372)) 
-                            - (pow(x,2) * rat(0.08201)) + (x * rat(2.122)) - rat(19.04); //TODO: FIX ME
+def Rat error_prob(Rat x) = (pow(x,5) * pow(10,-8) * rat(5.634)) - (pow(x,4) * pow(10,-5) * rat(2.319)) + (pow(x,3) * rat(0.003505)) 
+                            - (pow(x,2) * rat(0.2361)) + (x * rat(6.981)) - rat(64.99); //TODO: FIX ME
 
 
 

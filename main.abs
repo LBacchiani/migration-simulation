@@ -44,6 +44,7 @@ import * from Setup;
         zones = appendright(zones, "cloud");
         i = i + 1;
     }
+    await duration(monitoring_inverval(),monitoring_inverval());
     println(toPrint);
     IOrchestrator monitor = new Orchestrator(edge_migrations, cloud_migrations, zones, processors, collectors);
    
